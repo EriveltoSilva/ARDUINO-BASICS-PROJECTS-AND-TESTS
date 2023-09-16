@@ -2,7 +2,7 @@
 #include <FastLED.h>
 
 // How many leds in your strip?
-#define NUM_LEDS 75
+#define NUM_LEDS 5
 
 // For led chips like WS2812, which have a data line, ground, and power, you just
 // need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
@@ -28,12 +28,17 @@ CRGB cores[]={
 
 void setup() { 
   pinMode(BOTAO, INPUT_PULLUP);
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed  
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
+
+  for(byte i=0; i<NUM_LEDS; i++)
+    leds[i] = cor;
+  FastLED.show();  
 }
 
-void loop() { 
-
-  if((millis()-tempoDelay)>(1000*30))
+void loop() 
+{ 
+  
+  if((millis()-tempoDelay)>(1000*5))
   {
     tempoDelay= millis();
     trocarCor();
@@ -50,13 +55,8 @@ void loop() {
   for(byte i=0; i<NUM_LEDS; i++)
     leds[i] = cor;
   FastLED.show();
-
+  
   delay(500);
-  // Now turn the LED off, then pause
-  /*for(byte i=0; i<NUM_LEDS; i++)
-    leds[i] = cor;
-  FastLED.show();
-  delay(500);*/
 }
 
 void trocarCor()
