@@ -86,6 +86,8 @@ bool flagExit2 = false;
 bool flagAgend1 = false;
 bool flagAgend2 = false;
 
+String dataStored = "";
+
 unsigned long int timeDelay = 0;
 unsigned long int timerExit1 = 0;
 unsigned long int timerExit2 = 0;
@@ -171,9 +173,9 @@ void loop() {
   receiveCommand();
   verifyTimeToCloseExit();
 
-  if (millis() - timeDelay > 500) {
+  if (millis() - timeDelay > 1000) {
     timeDelay = millis();
-    sendData(readSensors());
+    dataStored = readSensors();
     printDataLCD(1, lcd1);
     printDataLCD(2, lcd2);
     digitalWrite(LED, !digitalRead(LED));
@@ -199,7 +201,7 @@ void loop() {
       openServo(servoEntrance2, "ENTRANCE2");
   }
 
-  delay(25);
+  delay(10);
 }
 
 bool hasCar(byte num) {
@@ -244,16 +246,8 @@ void verifyTimeToCloseExit()
 void openServo(Servo servo, String text) {
   if (text.equalsIgnoreCase("RESERVATION1") || text.equalsIgnoreCase("ENTRANCE1") || text.equalsIgnoreCase("EXIT1") || text.equalsIgnoreCase("RESERVATION2") || text.equalsIgnoreCase("EXIT2"))
     servo.write(90);
-  // else if(text.equalsIgnoreCase("ENTRANCE1"))
-  //   servo.write(90);
-  // else if(text.equalsIgnoreCase("EXIT1"))
-  //   servo.write(90);
-  // else if(text.equalsIgnoreCase("RESERVATION2"))
-  //   servo.write(90);
   else if (text.equalsIgnoreCase("ENTRANCE2"))
     servo.write(145);
-  // else if(text.equalsIgnoreCase("EXIT2"))
-  //   servo.write(90);
 }
 
 void closeServo(Servo servo, String text) {
@@ -261,14 +255,8 @@ void closeServo(Servo servo, String text) {
     servo.write(180);
   else if (text.equalsIgnoreCase("ENTRANCE1") || text.equalsIgnoreCase("RESERVATION2"))
     servo.write(0);
-  // else if(text.equalsIgnoreCase("EXIT1"))
-  //   servo.write(180);
-  // else if(text.equalsIgnoreCase("RESERVATION2"))
-  //   servo.write(0);
   else if (text.equalsIgnoreCase("ENTRANCE2"))
     servo.write(45);
-  // else if(text.equalsIgnoreCase("EXIT2"))
-  //   servo.write(180);
 }
 
 void closeAllServo() {
@@ -323,7 +311,7 @@ String readSensors() {
   Serial.println("V1:" + String(ldr4) + "(" + p2Vaga1 + ")");
   Serial.println("V2:" + String(ldr5) + "(" + p2Vaga2 + ")");
   Serial.println("V3:" + String(ldr6) + "(" + p2Vaga3 + ")");
-  Serial.println("R1:" + String(p2Reservation));
+  Serial.println("R2:" + String(p2Reservation));
   Serial.println("--------------------------------------------------------\n");
   String txt = ("D*" + String(p1Vaga1) + "*" + String(p1Vaga2) + "*" + String(p1Vaga3) + "*" + String(p1Reservation) + "*" + String(p2Vaga1) + "*" + String(p2Vaga2) + "*" + String(p2Vaga3) + "*" + String(p2Reservation) + "*");
   return txt;
@@ -339,7 +327,6 @@ void receiveCommand() {
     while (Serial.available()) {
       char rx = Serial.read();
       text += rx;
-      // Serial.println("RECEBIDO:"+text);
       switch (rx) {
         case 'A':  // abrir servo reserva p1
           openServo(servoReservation1, "RESERVATION1");
