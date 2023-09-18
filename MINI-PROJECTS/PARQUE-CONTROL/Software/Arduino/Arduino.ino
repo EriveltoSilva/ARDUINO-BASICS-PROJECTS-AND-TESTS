@@ -80,17 +80,20 @@ bool p2Reservation = false;
 bool flagEntrance1 = false;
 bool flagEntrance2 = false;
 
+bool flagReservation1 = false;
+bool flagReservation2 = false;
 bool flagExit1 = false;
 bool flagExit2 = false;
 
 bool flagAgend1 = false;
 bool flagAgend2 = false;
-
 String dataStored = "";
 
 unsigned long int timeDelay = 0;
 unsigned long int timerExit1 = 0;
 unsigned long int timerExit2 = 0;
+unsigned long int timerReservation1 = 0;
+unsigned long int timerReservation2 = 0;
 //////////////////////////////// Objects Instances /////////////////////////////
 Servo servoEntrance1;
 Servo servoExit1;
@@ -131,11 +134,16 @@ void setup() {
   servoEntrance1.attach(PIN_SERVO_ENTRANCE1);
   servoExit1.attach(PIN_SERVO_EXIT1);
   servoReservation1.attach(PIN_SERVO_RESERVATION1);
-  delay(500);
+  delay(250);
 
   servoEntrance2.attach(PIN_SERVO_ENTRANCE2);
   servoExit2.attach(PIN_SERVO_EXIT2);
   servoReservation2.attach(PIN_SERVO_RESERVATION2);
+  delay(250);
+
+  Serial.begin(9600);
+  delay(500);
+  Serial2.begin(9600);
   delay(500);
 
   lcd1.init();  // initialize the lcd
@@ -150,20 +158,16 @@ void setup() {
   lcd1.print(" UNIV.METODISTA");
   lcd1.setCursor(0, 1);
   lcd1.print(" PROJECTO FINAL");
-  lcd1.setCursor(-4, 2);
-  lcd1.print(" ## ERIVELTO  ## ");
+  lcd1.setCursor(-4, 3);
+  lcd1.print(" ##    RUI   ## ");
 
   lcd2.setCursor(0, 0);
   lcd2.print(" UNIV.METODISTA");
   lcd2.setCursor(0, 1);
   lcd2.print(" PROJECTO FINAL ");
-  lcd2.setCursor(-4, 2);
-  lcd2.print(" ## OSVALDO ## ");
-
-  Serial.begin(9600);
-  delay(500);
-  Serial2.begin(9600);
-  delay(500);
+  lcd2.setCursor(-4, 3);
+  lcd2.print(" ## OLIVEIRA ## ");
+  delay(1000);
 
   closeAllServo();
   Serial.println(" ## SISTEMA LIGADO, TUDO PRONTO! ##");
@@ -201,7 +205,7 @@ void loop() {
       openServo(servoEntrance2, "ENTRANCE2");
   }
 
-  delay(10);
+  delay(50);
 }
 
 bool hasCar(byte num) {
@@ -210,14 +214,14 @@ bool hasCar(byte num) {
 
 bool hasCar(Ultrasonic ultrassonic, String text) {
   int distance = ultrassonic.read();
-  Serial.println("###Vaga" + text + ":" + String(distance));
+  //Serial.println("###Vaga" + text + ":" + String(distance));
   if (text.equalsIgnoreCase("EXIT1") || text.equalsIgnoreCase("EXIT2"))
     return (distance > 0 && distance < 14);
   else if (text.equalsIgnoreCase("RESERVATION1") || text.equalsIgnoreCase("RESERVATION2"))
     return (distance > 0 && distance < 7);
 }
 
-void openExit(Servo servo, String text) {
+void openWithTimer(Servo servo, String text) {
   if (text.equalsIgnoreCase("EXIT1"))
   {
     timerExit1 = millis();
@@ -227,6 +231,16 @@ void openExit(Servo servo, String text) {
   {  
     timerExit2 = millis();
     flagExit2 = true;
+  }
+  else if (text.equalsIgnoreCase("RESERVATION1"))
+  {  
+    timerReservation1 = millis();
+    flagReservation1 = true;
+  }
+  else if (text.equalsIgnoreCase("RESERVATION2"))
+  {  
+    timerReservation2 = millis();
+    flagReservation2 = true;
   }
   servo.write(90);
 }
@@ -240,6 +254,14 @@ void verifyTimeToCloseExit()
   if ((millis() - timerExit2 > TIME_TO_CLOSE) && flagExit2) {
     flagExit2 = false;
     closeServo(servoExit2, "EXIT2");
+  }
+  if ((millis() - timerReservation1 > TIME_TO_CLOSE) && flagReservation1) {
+    flagReservation1 = false;
+    closeServo(servoReservation1, "RESERVATION1");
+  }
+  if ((millis() - timerReservation2 > TIME_TO_CLOSE) && flagReservation2) {
+    flagReservation2 = false;
+    closeServo(servoReservation2, "RESERVATION2");
   }
 }
 
@@ -296,10 +318,10 @@ String readSensors() {
   p2Reservation = hasCar(ultrassonicReservation2, "RESERVATION2");
 
   if (hasCar(ultrassonicExit1, "EXIT1"))
-    openExit(servoExit1, "EXIT1");
+    openWithTimer(servoExit1, "EXIT1");
 
   if (hasCar(ultrassonicExit2, "EXIT2"))
-    openExit(servoExit2, "EXIT2");
+    openWithTimer(servoExit2, "EXIT2");
 
   Serial.println("---------------------- Dados P1 -----------------------");
   Serial.println("V1:" + String(ldr1) + "(" + p1Vaga1 + ")");
@@ -372,6 +394,7 @@ void receiveCommand() {
         case 'Z': flagAgend2 = true; break;   //
       }
     }
+    return "";
   }
 
 
@@ -382,7 +405,8 @@ void receiveCommand() {
       text += rx;
       switch (rx) {
         case 'A':  // abrir servo reserva p1
-          openServo(servoReservation1, "RESERVATION1");
+          //openServo(servoReservation1, "RESERVATION1");
+          openWithTimer(servoReservation1, "RESERVATION1");
           break;
         case 'a':  // fechar servo reserva p1
           closeServo(servoReservation1, "RESERVATION1");
@@ -401,7 +425,8 @@ void receiveCommand() {
           break;
 
         case 'D':  // abrir servo reserva p2
-          openServo(servoReservation2, "RESERVATION2");
+          //openServo(servoReservation2, "RESERVATION2");
+          openWithTimer(servoReservation2, "RESERVATION2");
           break;
         case 'd':  // fechar servo reserva p2
           closeServo(servoReservation2, "RESERVATION2");
@@ -443,7 +468,7 @@ void printDataLCD(byte numLCD, LiquidCrystal_I2C lcd) {
     lcd.print("VAGA3:");
     lcd.print((p1Vaga3) ? "OCUPADO" : "LIVRE");
     lcd.setCursor(-4, 3);
-    lcd.print("ESPECIAL:");
+    lcd.print("SPECIAL:");
     if (flagAgend1)
       lcd.print("AGENDADO");
     else
@@ -458,7 +483,7 @@ void printDataLCD(byte numLCD, LiquidCrystal_I2C lcd) {
     lcd.print("VAGA3:");
     lcd.print((p2Vaga3) ? "OCUPADO" : "LIVRE");
     lcd.setCursor(-4, 3);
-    lcd.print("ESPECIAL:");
+    lcd.print("SPECIAL:");
     if (flagAgend2)
       lcd.print("AGENDADO");
     else

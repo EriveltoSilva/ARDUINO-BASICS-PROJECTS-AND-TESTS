@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-AO">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Erivelto Clénio da Costa e Silva (Otlevire)">
+    <title>Parque Control - Cadastro de Usuário</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body class="d-flex justify-content-center align-items-center py-4 bg-body-tertiary">
+    <div class="wrapper">
+        <form action="/make-register" method="post">
+            <h1>Cadastro de Novo User do App</h1>
+            <div class="input-box">
+                <input type="text" name="username" id="username" placeholder="Digite o username do Usuário" required>
+                <i class='bx bxs-user'></i>
+            </div>
+            <div class="input-box">
+                <input type="password" name="passwordUser" id="passwordUser" placeholder="Digite a senha para o Usuário" required>
+                <i class='bx bxs-lock-alt'></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" name="passwordAdmin" id="passwordAdmin" placeholder="Digite a senha de Admin" required>
+                <i class='bx bxs-lock-alt'></i>
+            </div>
+            
+            <button type="submit" id="btn" class="btn">Registrar Usuário</button>
+        </form>
+    </div>
+
+    <!-- <script src="login.js"></script> -->
+
+</body>
+
+</html>

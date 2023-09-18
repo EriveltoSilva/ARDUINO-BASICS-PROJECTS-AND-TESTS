@@ -14,7 +14,66 @@
 </head>
 
 
-<body class="mode-dark">
+<body class="mode-light">
+    <div class="modal fade" id="exampleModal1" tabindex="-1" aria-labelledby="exampleModalLabel1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel1">P1- Agendar Vaga 4 para os próximos 2 minutos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <input type="hidden" class="form-control">
+                        <div class="mb-3">
+                            <label for="username1" class="col-form-label">Username:</label>
+                            <input type="text" class="form-control" name="username1" id="username1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password1" class="col-form-label">Password:</label>
+                            <input type="password" class="form-control" name="password1" id="password1">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button id="btnReserve1" type="button" class="btn btn-primary" data-bs-dismiss="modal" >Agendar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="exampleModal2" tabindex="-1" aria-labelledby="exampleModalLabel2" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel2">P2- Agendar Vaga 4 para os próximos 2 minutos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <input type="hidden" class="form-control" id="">
+                        <div class="mb-3">
+                            <label for="username2" class="col-form-label">Username:</label>
+                            <input type="text" class="form-control" name="username2"  id="username2" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password2" class="col-form-label">Password:</label>
+                            <input type="password" class="form-control" name="password2" id="password2" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button id="btnReserve2" type="button" class="btn btn-primary" data-bs-dismiss="modal" >Agendar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
     <main>
         <div id="btnModeDark"></div>
         <section>
@@ -25,7 +84,7 @@
                 </div>
             </div>
         </section>
-     
+
         <section id="parque1" class="mt-5">
             <h3 class="text-center">Parque-1</h3>
             <div class="row justify-content-evenly mb-4">
@@ -77,7 +136,13 @@
                             <h4 class="card-title">Vaga Nº4 - Especial</h4>
                             <div class="d-flex justify-content-between">
                                 <h5 id="p1Vaga4" class="card-text text-muted text-end">-----</h5>
-                                <button id="bntReservation1" type="button" class="btn btn-outline-primary">Reservar</button>
+                                <div class="btn-group" role="group" aria-label="Basic outlined example">
+                                    <button id="btnOpenReservation1" type="button"
+                                        class="btn btn-outline-primary">Abrir</button>
+                                    <button  id="btnReservation1" type="button" class="btn btn-outline-primary"
+                                        data-bs-toggle="modal" data-bs-target="#exampleModal1"
+                                        data-bs-whatever="@mdo">Reservar</button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-footer">
@@ -132,6 +197,8 @@
                     </div>
                 </div>
 
+
+
                 <div class="col-10 col-md-4 mt-4">
                     <div class="card h-100">
                         <img id="p2Image4" src="vaga-livre.png" class="card-img-top" alt="...">
@@ -139,7 +206,12 @@
                             <h4 class="card-title">Vaga Nº4 - Especial</h4>
                             <div class="d-flex justify-content-between">
                                 <h5 id="p2Vaga4" class="card-text text-muted text-end">-----</h5>
-                                <button id="bntReservation2" type="button" class="btn btn-outline-primary">Reservar</button>
+                                <div class="btn-group" role="group" aria-label="Basic outlined example">
+                                    <button id="btnOpenReservation2" type="button" class="btn btn-outline-primary">Abrir</button>
+                                    <button id="btnReservation2"  type="button" class="btn btn-outline-primary"
+                                        data-bs-toggle="modal" data-bs-target="#exampleModal2"
+                                        data-bs-whatever="@mdo">Reservar</button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-footer">

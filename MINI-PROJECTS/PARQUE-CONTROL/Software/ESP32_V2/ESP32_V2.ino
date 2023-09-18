@@ -17,15 +17,18 @@
 #include <WiFi.h>                             /////
 #include "SPIFFS.h"                           /////
 #include <AsyncTCP.h>                         /////
-#include <ArduinoJson.h>
-//#include <Arduino_JSON.h>
+#include <ArduinoJson.h>                      /////
 #include <ESPAsyncWebServer.h>                /////
+#include <IOXhop_FirebaseESP32.h>          //importa biblioteca para esp32 se comunicar com firebase
 ///////////////////////////////////////////////////
 
 ////////////////  PIN CONFIGURATIONS //////////////
 #define LED 2                                 /////
 #define RXD2 16  //RX da serial do ESP32      /////
 #define TXD2 17  //TX da serial do ESP32      /////
+#define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"    //substitua "Link_do_seu_banco_de_dados" pelo link do seu banco de dados 
+#define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"   //substitua "Senha_do_seu_banco_de_dados" pela senha do seu banco de dados
+
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
@@ -34,11 +37,14 @@
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
-bool flagAgend1 = false;          /////
-bool flagAgend2 = false;          /////
-String dataStored = "";
-unsigned long int timeDelay = 0;  /////
-const char* PARAM_MESSAGE = "message";
+bool flagAgend1 = false;                      /////
+bool flagAgend2 = false;                      /////
+String dataStored = "";                       /////
+String userReservation1 = "";                 /////
+String userReservation2 = "";                 /////
+unsigned long int timerReservation1 = 0;        /////
+unsigned long int timerReservation2 = 0;        /////
+unsigned long int timeDelay = 0;              /////
 ///////////////////////////////////////////////////
 
 ///////////////  OBJECTS DEFINITIONS  /////////////
@@ -50,7 +56,9 @@ HardwareSerial arduino(2);                    /////
 void wifiConfig();                            /////
 void initConfig();                            /////
 bool initMyFS();                              /////
+bool isUser(String email, String password);   /////
 void serverHandlers();                        /////
+void saveUserFirebase(String email, String password);
 ///////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////
@@ -68,23 +76,37 @@ void setup() {
   else
     Serial.println(" ## ERRO MONTANDO A PARTIÇÃO SPIFFS ##");
 
+  //inicia comunicação com firebase definido anteriormente
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   serverHandlers();
   Serial.println(" ##-------SISTEMA DE DOMÓTICA!--------##");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void loop() {
-  if(millis()-timeDelay>800)
+  verifyTimeReservation();
+  if (millis() - timeDelay > 800)
   {
-     timeDelay = millis();
-     askData();
-     String dataReceived = receiveData();
-     if(dataReceived != "")
-     {
-       dataStored = dataReceived;
-       Serial.println("--------------Arduino --> ESP32:--------------\nR:" + dataStored);
-       digitalWrite(LED, !digitalRead(LED));
-     }
+    timeDelay = millis();
+    askData();
+    String dataReceived = receiveData();
+    if (dataReceived != "")
+    {
+      if (dataReceived.indexOf("IP") > 0)
+      {
+        Serial.println("ENDEREÇO IP ENVIADO!");
+        Serial.println("IP:" + String(WiFi.localIP()));
+      }
+      else {
+        dataStored = dataReceived;
+        Serial.println("--------------Arduino --> ESP32:--------------\nR:" + dataStored);
+      }
+    }
+    if (flagAgend1)
+      Serial.println("ESPACO 1 AGENDADO POR:" + userReservation1);
+    if (flagAgend2)
+      Serial.println("ESPACO 1 AGENDADO POR:" + userReservation2);
+    digitalWrite(LED, !digitalRead(LED));
   }
   delay(20);
 }
@@ -117,6 +139,7 @@ void wifiConfig() {
   }
   Serial.print("\nCONECTADO AO WIFI NO IP:");
   Serial.println(WiFi.localIP());
+  Serial.println(WiFi.localIP());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -128,71 +151,51 @@ void askData() {
 String receiveData() {
   if (arduino.available()) {
     String txt = "";
-    while (arduino.available()) 
-      txt= arduino.readStringUntil('\n');
+    while (arduino.available())
+      txt = arduino.readStringUntil('\n');
     return txt;
   }
   return "";
 }
 
+////////////////////////////////////////////////////////////////////////
 bool initMyFS()
 {
   return (SPIFFS.begin(true));
 }
 
-String readMyFS(String path)
-{
-  /**
-     Return value meaning:
-     "": Error opening file
-     string text: success reading the file
-  */
 
-  if (path.charAt(0) != '/')  path = "/" + path;
-  File file = SPIFFS.open(path);
-  if (!file)  return "";
-  String content = "";
-  while (file.available())
-    content += (char)file.read();
-  file.close();
-  return content;
+void verifyTimeReservation()
+{
+  if ((millis() - timerReservation1)>120000 && flagAgend1)
+  {
+    flagAgend1 = false;
+    userReservation1 = "";
+    arduino.println("y");
+    Serial.println("################################TEMPO DA RESERVA 1 EXPIROU ########################################");
+  }
+
+  if ((millis() - timerReservation2)>120000 && flagAgend2)
+  {
+    flagAgend2 = false;
+    userReservation2 = "";
+    arduino.println("z");
+    Serial.println("################################TEMPO DA RESERVA 2 EXPIROU ########################################");
+  }
 }
 
-int appendMyFile(String path, String content)
+bool isUser(String username, String password)
 {
-  /**
-     Return value meaning:
-     -1: Error opening file
-      0: Error appending in the file open
-      1: success appending in the file
-  */
-
-  if (path.charAt(0) != '/') path = "/" + path;
-  File file = SPIFFS.open(path, FILE_APPEND);
-  if (!file) return -1;
-  byte flag = (file.print(content + "\n")) ? 1 : 0;
-  file.close();
-  return flag;
+  String pass = Firebase.getString("/users/" + username);
+  return (pass.equals(password));
 }
 
-int writeMyFile(String path, String content)
+void saveUserFirebase(String username, String password)
 {
-  /**
-     Return value meaning:
-     -1: Error opening file
-      0: Error writing in the file open
-      1: success writing in the file
-  */
-  if (path.charAt(0) != '/') path = "/" + path;
-  File file = SPIFFS.open(path, FILE_WRITE);
-  if (!file) return -1;
-  byte flag = (file.print(content + "\n")) ? 1 : 0;
-  file.close();
-  return flag;
+  Firebase.setString("/users/" + username, password);
 }
 
-
-
+////////////////////////////////////////////////////////////////////////
 void serverHandlers()
 {
   // Route to load bootstrap.min.css file
@@ -223,28 +226,181 @@ void serverHandlers()
   server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/index.js", "text/javascript");
   });
+  // Route to load index.css file
+  server.on("/login.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/login.css", "text/css");
+  });
+  // Route to load login.js file
+  server.on("/login.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/login.js", "text/javascript");
+  });
+
+
+
 
 
   /*--------------------------ENDPOINS---------------------------*/
   // Route for root / web page
-  server.on("/welcome", HTTP_GET, [](AsyncWebServerRequest * request) {
-    Serial.println("-------->redirecionando para index.html");
-    request->redirect("/");
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("-------->redirecionando para login.html");
+    request->redirect("/login");
+  });
+
+  // Route for login / web page
+  server.on("/login", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("--------> login.html");
+    request->send(SPIFFS, "/login.html");
+  });
+
+  //POST request para login
+  server.on("/getin", HTTP_POST, [](AsyncWebServerRequest * request) {
+    Serial.println("------> Req de /getin do login.html");
+    if (!(request->hasParam("username", true) && request->hasParam("password", true)))
+    {
+      Serial.println("---> Erro... Parametros de Login Incompletos!\nRedirecionando para ----> login.html");
+      request->redirect("/login");
+    }
+    else {
+      String username = request->getParam("username", true)->value();
+      String password = request->getParam("password", true)->value();
+      if (username.equals("admin") && password.equals("otlevire"))
+      {
+        Serial.println("--->Username e Senha de Admin Válidos!\nRedirecionando para ----> register.html");
+        request->redirect("/register");
+      }
+      else {
+        if (!isUser(username, password))
+        {
+          Serial.println("--->Username e Senha Inválidos!\nRedirecionando para ---> login.html");
+          request->redirect("/login");
+        }
+        else {
+          Serial.println("--->Username e Senha Válidos!\nRedirecionando para ---> index.html");
+          request->redirect("/home");
+        }
+      }
+    }
+  });
+
+
+  // POST request para Cadastro de Usuario
+  server.on("/make-register", HTTP_POST, [](AsyncWebServerRequest * request) {
+    Serial.println("------> Req de /register do register.html");
+    if (!(request->hasParam("username", true) && request->hasParam("passwordUser", true) && request->hasParam("passwordAdmin", true)))
+    {
+      Serial.println("---> Erro... Parametros de Login Incompletos!\nRedirecionando para ----> login.html");
+      request->redirect("/login");
+    }
+    else {
+      String username = request->getParam("username", true)->value();
+      String passwordUser = request->getParam("passwordUser", true)->value();
+      String passwordAdmin = request->getParam("passwordAdmin", true)->value();
+
+      if (passwordAdmin.equals("otlevire"))
+      {
+        Serial.println("--->Admin Válido! Salvando dados do novo usuario no Firebase...");
+        Firebase.setString("/users/" + username, passwordUser);
+        //saveUserFirebase(username, passwordUser);
+        Serial.println("Dados do Usuario Salvos!");
+        request->redirect("/login");
+      }
+      else {
+        Serial.println("--->Admin Inválido!Redirecionando para register.html");
+        request->redirect("/register");
+      }
+    }
+  });
+
+
+
+  // Route for root / web page
+  server.on("/register", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("--------> register.html");
+    request->send(SPIFFS, "/register.html");
   });
   // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/home", HTTP_GET, [](AsyncWebServerRequest * request) {
     Serial.println("--------> Index.html");
     request->send(SPIFFS, "/index.html");
   });
 
   server.on("/dados", HTTP_GET, [] (AsyncWebServerRequest * request) {
-    Serial.println("--------> Dados:"+dataStored);
+    //dataStored = "D*1*1*1*1*0*0*0*0*";
+    Serial.println("--------> Dados:" + dataStored);
     dataStored.replace("\n", "");
-    dataStored.replace("\r", "");      
-    String resp = "{\"status\":\"success\", \"data\":\""+dataStored+"\"}";
+    dataStored.replace("\r", "");
+    String resp = "{\"status\":\"success\", \"data\":\"" + dataStored + "\"}";
     request->send(200, "application/json", resp);
   });
 
+  server.on("/openReserve1", HTTP_GET, [] (AsyncWebServerRequest * request) {
+    Serial.println("--------> openReserve1:");
+    //if(flagAgend )
+    {
+      arduino.println("A");
+      request->send(200, "application/json", "{\"status\":\"success\"}");
+    }
+
+  });
+  server.on("/openReserve2", HTTP_GET, [] (AsyncWebServerRequest * request) {
+    Serial.println("--------> openReserve2:");
+    arduino.println("D");
+    request->send(200, "application/json", "{\"status\":\"success\"}");
+  });
+
+
+  // POST request para Cadastro de Usuario
+  server.on("/reservation1", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("------> reservation1");
+    String username = request->getParam("username")->value();
+    String password = request->getParam("password")->value();
+    if (!isUser(username, password))
+    {
+      Serial.println("######## Username e Senha Inválidos!\n ########");
+      //request->redirect("/home");
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"Usuário Não Encontrado!\"}");
+    }
+    else 
+    {
+      if (flagAgend1 == false)
+      {
+        flagAgend1 = true;
+        userReservation1 = username;
+        timerReservation1 = millis();
+        arduino.println("Y");
+        Serial.println("--->Reserva agendada!\nUsuario:"+userReservation1+"\nRedirecionando para ---> index.html");
+        request->send(200, "application/json", "{\"status\":\"success\", \"message\":\"RESERVADO COM SUCESSO!\"}");
+      }
+      else
+        request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"UPS!O ESPACO JÁ SE ENCONTRA RESERVADO!\"}");
+      //request->redirect("/home");
+    }
+  });
+
+
+  server.on("/reservation2", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("------> reservation2");
+    String username = request->getParam("username")->value();
+    String password = request->getParam("password")->value();
+    if (!isUser(username, password))
+    {
+      Serial.println("######## Username e Senha Inválidos!\n ########");
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"Usuário Não Encontrado!\"}");
+    }
+    else {
+      if (flagAgend2 == false)
+      {
+        flagAgend2 = true;
+        userReservation2 = username;
+        timerReservation2 = millis();
+        arduino.println("Z");
+        Serial.println("--->Reserva agendada!\nUsuario:"+userReservation2+"\nRedirecionando para ---> index.html");
+        request->send(200, "application/json", "{\"status\":\"success\", \"message\":\"RESERVADO COM SUCESSO!\"}");
+      }
+      else      
+        request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"UPS! O ESPACO JÁ SE ENCONTRA RESERVADO!\"}");
+    }
+  });
   server.onNotFound(notFound);
   server.begin();
 }
