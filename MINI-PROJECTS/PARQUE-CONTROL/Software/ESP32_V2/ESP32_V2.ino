@@ -28,18 +28,20 @@
 #define TXD2 17  //TX da serial do ESP32      /////
 #define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"    //substitua "Link_do_seu_banco_de_dados" pelo link do seu banco de dados 
 #define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"   //substitua "Senha_do_seu_banco_de_dados" pela senha do seu banco de dados
-
+#define TIME_RESERVATION 120000
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "O"                              /////
+#define SSID "PARK"                           /////
 #define PASSWORD "123456789"                  /////
+//#define SSID "NETHOUSE"                     /////
+//#define PASSWORD "Eduanara3130"             /////
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
 bool flagAgend1 = false;                      /////
 bool flagAgend2 = false;                      /////
-String dataStored = "";                       /////
+String dataStored ="D*0*0*0*0*0*0*0*0*";      /////
 String userReservation1 = "";                 /////
 String userReservation2 = "";                 /////
 unsigned long int timerReservation1 = 0;        /////
@@ -92,20 +94,13 @@ void loop() {
     String dataReceived = receiveData();
     if (dataReceived != "")
     {
-      if (dataReceived.indexOf("IP") > 0)
-      {
-        Serial.println("ENDEREÇO IP ENVIADO!");
-        Serial.println("IP:" + String(WiFi.localIP()));
-      }
-      else {
         dataStored = dataReceived;
-        Serial.println("--------------Arduino --> ESP32:--------------\nR:" + dataStored);
-      }
+        Serial.println("--> RECEBIDO DO ARDUINO:" + dataStored); 
     }
     if (flagAgend1)
       Serial.println("ESPACO 1 AGENDADO POR:" + userReservation1);
     if (flagAgend2)
-      Serial.println("ESPACO 1 AGENDADO POR:" + userReservation2);
+      Serial.println("ESPACO 2 AGENDADO POR:" + userReservation2);
     digitalWrite(LED, !digitalRead(LED));
   }
   delay(20);
@@ -119,6 +114,7 @@ void initConfig() {
   arduino.begin(9600, SERIAL_8N1, RXD2, TXD2);
   delay(500);
   Serial.println("CONFIGURAÇÕES INICIAS SETADAS!");
+  delay(5000);
 }
 
 /////////////////////////////////////////////////////////
@@ -139,12 +135,22 @@ void wifiConfig() {
   }
   Serial.print("\nCONECTADO AO WIFI NO IP:");
   Serial.println(WiFi.localIP());
-  Serial.println(WiFi.localIP());
 }
 
 //////////////////////////////////////////////////////////////////////////////
 void askData() {
+  static unsigned long int timeSend =0;
+  static bool myFlag = false;
   arduino.println('R');
+  if((millis()-timeSend>5000))
+  {
+      timeSend = millis();
+      myFlag= !myFlag;
+      if(myFlag) 
+        arduino.println((flagAgend1)?'Y':'y');
+      else 
+        arduino.println((flagAgend2)?'Z':'z');  
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -325,27 +331,58 @@ void serverHandlers()
   });
 
   server.on("/dados", HTTP_GET, [] (AsyncWebServerRequest * request) {
-    //dataStored = "D*1*1*1*1*0*0*0*0*";
+    //dataStored = "D*1*1*1*0*0*0*0*0*";
+    unsigned long time1=0;
+    unsigned long time2=0;
+    if(flagAgend1)
+      time1 = (TIME_RESERVATION - (millis()-timerReservation1))/1000; 
+    if(flagAgend2)
+      time2 = (TIME_RESERVATION - (millis()-timerReservation2))/1000;
     Serial.println("--------> Dados:" + dataStored);
     dataStored.replace("\n", "");
     dataStored.replace("\r", "");
+    dataStored += (flagAgend1)?"1*":"0*";
+    dataStored += (flagAgend2)?"1*":"0*";
+    dataStored += String(time1)+"*";
+    dataStored += String(time2)+"*";
     String resp = "{\"status\":\"success\", \"data\":\"" + dataStored + "\"}";
     request->send(200, "application/json", resp);
   });
 
   server.on("/openReserve1", HTTP_GET, [] (AsyncWebServerRequest * request) {
     Serial.println("--------> openReserve1:");
-    //if(flagAgend )
+    if(flagAgend1)
     {
-      arduino.println("A");
-      request->send(200, "application/json", "{\"status\":\"success\"}");
+      String username = request->getParam("username")->value();
+      if(username.equals(userReservation1))
+      {
+        Serial.println("======= ABRINDO=============================");
+        arduino.println("A");
+        request->send(200, "application/json", "{\"status\":\"success\"}");  
+      }
+      else
+        request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA ESTE USUÁRIO\"}");
     }
-
+    else
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 1\"}");
   });
+  
   server.on("/openReserve2", HTTP_GET, [] (AsyncWebServerRequest * request) {
     Serial.println("--------> openReserve2:");
-    arduino.println("D");
-    request->send(200, "application/json", "{\"status\":\"success\"}");
+    if(flagAgend2)
+    {
+      String username = request->getParam("username")->value();
+      if(username.equals(userReservation2))
+      {
+        Serial.println("======= ABRINDO=============================");
+        arduino.println("D");
+        request->send(200, "application/json", "{\"status\":\"success\"}");  
+      }
+      else
+        request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA ESTE USUÁRIO\"}");
+    }
+    else
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 2\"}");
   });
 
 

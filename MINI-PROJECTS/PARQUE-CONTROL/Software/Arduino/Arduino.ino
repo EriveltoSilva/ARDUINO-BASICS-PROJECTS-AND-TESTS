@@ -64,6 +64,9 @@
 #define BUTTON_ENTRANCE1 2
 #define BUTTON_ENTRANCE2 3
 
+#define BUTTON_RESERVATION1 49
+#define BUTTON_RESERVATION2 50
+
 #define TIME_TO_CLOSE 5000
 
 /////////////////////////////// Variables /////////////////////////////////////
@@ -79,6 +82,8 @@ bool p2Reservation = false;
 
 bool flagEntrance1 = false;
 bool flagEntrance2 = false;
+bool flagReserve1 = false;
+bool flagReserve2 = false;
 
 bool flagReservation1 = false;
 bool flagReservation2 = false;
@@ -130,6 +135,9 @@ void setup() {
 
   pinMode(BUTTON_ENTRANCE1, INPUT_PULLUP);
   pinMode(BUTTON_ENTRANCE2, INPUT_PULLUP);
+
+  pinMode(BUTTON_RESERVATION1, INPUT_PULLUP);
+  pinMode(BUTTON_RESERVATION2, INPUT_PULLUP);
 
   servoEntrance1.attach(PIN_SERVO_ENTRANCE1);
   servoExit1.attach(PIN_SERVO_EXIT1);
@@ -205,8 +213,26 @@ void loop() {
       openServo(servoEntrance2, "ENTRANCE2");
   }
 
+  if (!digitalRead(BUTTON_RESERVATION1)) {
+    while (!digitalRead(BUTTON_RESERVATION1));
+    flagReserve1 = !flagReserve1;
+    if (flagReserve1)
+      closeServo(servoReservation1, "RESERVATION1");
+    else
+      openServo(servoReservation1, "RESERVATION1");
+  }
+
+  if (!digitalRead(BUTTON_RESERVATION2)) {
+    while (!digitalRead(BUTTON_RESERVATION2));
+    flagReserve2 = !flagReserve2;
+    if (flagReserve2)
+      closeServo(servoReservation2, "RESERVATION2");
+    else
+      openServo(servoReservation2, "RESERVATION2");
+  }
   delay(50);
 }
+
 
 bool hasCar(byte num) {
   return (num > 50);
@@ -222,31 +248,23 @@ bool hasCar(Ultrasonic ultrassonic, String text) {
 }
 
 void openWithTimer(Servo servo, String text) {
-  if (text.equalsIgnoreCase("EXIT1"))
-  {
+  if (text.equalsIgnoreCase("EXIT1")) {
     timerExit1 = millis();
     flagExit1 = true;
-  }
-  else if (text.equalsIgnoreCase("EXIT2"))
-  {  
+  } else if (text.equalsIgnoreCase("EXIT2")) {
     timerExit2 = millis();
     flagExit2 = true;
-  }
-  else if (text.equalsIgnoreCase("RESERVATION1"))
-  {  
+  } else if (text.equalsIgnoreCase("RESERVATION1")) {
     timerReservation1 = millis();
     flagReservation1 = true;
-  }
-  else if (text.equalsIgnoreCase("RESERVATION2"))
-  {  
+  } else if (text.equalsIgnoreCase("RESERVATION2")) {
     timerReservation2 = millis();
     flagReservation2 = true;
   }
   servo.write(90);
 }
 
-void verifyTimeToCloseExit()
-{
+void verifyTimeToCloseExit() {
   if ((millis() - timerExit1 > TIME_TO_CLOSE) && flagExit1) {
     flagExit1 = false;
     closeServo(servoExit1, "EXIT1");
@@ -398,9 +416,9 @@ void receiveCommand() {
   }
 
 
-  if (Serial2.available()>0) {
+  if (Serial2.available() > 0) {
     String text = "";
-    while (Serial2.available()>0) {
+    while (Serial2.available() > 0) {
       char rx = Serial2.read();
       text += rx;
       switch (rx) {
