@@ -1,75 +1,70 @@
 /**************************************************
-    AUTHOR: ERIVELTO CLÉNIO DA COSTA E SILVA
-    FOR:
+    AUTHOR: Otlevire
+    FOR: RUI e Colega
+    Universidade Metodista
     CREATED AT: 10-09-2023.
-    Objectivo: Controlar um carro robotizado de 4 rodas por meio do uma página web
-      no computador ou celular, isso via WIFI.
-
 
     Principais Componentes usados:
       *** 1-ESP32 (1)
-      *** 2- (1)
-      *** 3- (1)
-      *** 4- (1)
 *************************************************/
 
 ////////////////// Labraries Used  ////////////////
-#include <WiFi.h>                             /////
-#include "SPIFFS.h"                           /////
-#include <AsyncTCP.h>                         /////
-#include <ArduinoJson.h>                      /////
-#include <ESPAsyncWebServer.h>                /////
-#include <IOXhop_FirebaseESP32.h>          //importa biblioteca para esp32 se comunicar com firebase
+#include <WiFi.h>                 /////
+#include "SPIFFS.h"               /////
+#include <AsyncTCP.h>             /////
+#include <ArduinoJson.h>          /////
+#include <ESPAsyncWebServer.h>    /////
+#include <IOXhop_FirebaseESP32.h> //importa biblioteca para esp32 se comunicar com firebase
 ///////////////////////////////////////////////////
 
 ////////////////  PIN CONFIGURATIONS //////////////
-#define LED 2                                 /////
-#define RXD2 16  //RX da serial do ESP32      /////
-#define TXD2 17  //TX da serial do ESP32      /////
-#define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"    //substitua "Link_do_seu_banco_de_dados" pelo link do seu banco de dados 
-#define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"   //substitua "Senha_do_seu_banco_de_dados" pela senha do seu banco de dados
+#define LED 2                                                               /////
+#define RXD2 16                                                             // RX da serial do ESP32      /////
+#define TXD2 17                                                             // TX da serial do ESP32      /////
+#define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/" // substitua "Link_do_seu_banco_de_dados" pelo link do seu banco de dados
+#define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"             // substitua "Senha_do_seu_banco_de_dados" pela senha do seu banco de dados
 #define TIME_RESERVATION 120000
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "PARK"                           /////
-#define PASSWORD "123456789"                  /////
-//#define SSID "NETHOUSE"                     /////
-//#define PASSWORD "Eduanara3130"             /////
+#define SSID "PARK"          /////
+#define PASSWORD "123456789" /////
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
-bool flagAgend1 = false;                      /////
-bool flagAgend2 = false;                      /////
-String dataStored ="D*0*0*0*0*0*0*0*0*";      /////
-String userReservation1 = "";                 /////
-String userReservation2 = "";                 /////
-unsigned long int timerReservation1 = 0;        /////
-unsigned long int timerReservation2 = 0;        /////
-unsigned long int timeDelay = 0;              /////
+bool flagAgend1 = false;                  /////
+bool flagAgend2 = false;                  /////
+String dataStored = "D*0*0*0*0*0*0*0*0*"; /////
+String userReservation1 = "";             /////
+String userReservation2 = "";             /////
+unsigned long int timerReservation1 = 0;  /////
+unsigned long int timerReservation2 = 0;  /////
+unsigned long int timeDelay = 0;          /////
 ///////////////////////////////////////////////////
 
 ///////////////  OBJECTS DEFINITIONS  /////////////
-AsyncWebServer server(80);                    /////
-HardwareSerial arduino(2);                    /////
+AsyncWebServer server(80); /////
+HardwareSerial arduino(2); /////
 ///////////////////////////////////////////////////
 
 ////////////// FUNCTION DEFINITIONS  //////////////
-void wifiConfig();                            /////
-void initConfig();                            /////
-bool initMyFS();                              /////
-bool isUser(String email, String password);   /////
-void serverHandlers();                        /////
+void wifiConfig();                          /////
+void initConfig();                          /////
+bool initMyFS();                            /////
+bool isUser(String email, String password); /////
+void serverHandlers();                      /////
 void saveUserFirebase(String email, String password);
 ///////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////
-void notFound(AsyncWebServerRequest *request) {
+void notFound(AsyncWebServerRequest *request)
+{
   request->send(404, "text/plain", "Not found");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void setup() {
+void setup()
+{
   initConfig();
   wifiConfig();
 
@@ -78,14 +73,15 @@ void setup() {
   else
     Serial.println(" ## ERRO MONTANDO A PARTIÇÃO SPIFFS ##");
 
-  //inicia comunicação com firebase definido anteriormente
+  // inicia comunicação com firebase definido anteriormente
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   serverHandlers();
   Serial.println(" ##-------SISTEMA DE DOMÓTICA!--------##");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void loop() {
+void loop()
+{
   verifyTimeReservation();
   if (millis() - timeDelay > 800)
   {
@@ -94,8 +90,8 @@ void loop() {
     String dataReceived = receiveData();
     if (dataReceived != "")
     {
-        dataStored = dataReceived;
-        Serial.println("--> RECEBIDO DO ARDUINO:" + dataStored); 
+      dataStored = dataReceived;
+      Serial.println("--> RECEBIDO DO ARDUINO:" + dataStored);
     }
     if (flagAgend1)
       Serial.println("ESPACO 1 AGENDADO POR:" + userReservation1);
@@ -107,7 +103,8 @@ void loop() {
 }
 
 /////////////////////////////////////////////////////////
-void initConfig() {
+void initConfig()
+{
   pinMode(LED, OUTPUT);
   Serial.begin(9600);
   delay(500);
@@ -118,15 +115,18 @@ void initConfig() {
 }
 
 /////////////////////////////////////////////////////////
-void wifiConfig() {
-  if (WiFi.status() == WL_CONNECTED) return;
+void wifiConfig()
+{
+  if (WiFi.status() == WL_CONNECTED)
+    return;
   Serial.println();
   Serial.print("CONECTANDO A WIFI:");
   Serial.println(SSID);
   Serial.print("PROCURANDO");
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
-  for (int i = 0; WiFi.status() != WL_CONNECTED; i++) {
+  for (int i = 0; WiFi.status() != WL_CONNECTED; i++)
+  {
     digitalWrite(LED, !digitalRead(LED));
     delay(150);
     Serial.print(".");
@@ -138,24 +138,27 @@ void wifiConfig() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-void askData() {
-  static unsigned long int timeSend =0;
+void askData()
+{
+  static unsigned long int timeSend = 0;
   static bool myFlag = false;
   arduino.println('R');
-  if((millis()-timeSend>5000))
+  if ((millis() - timeSend > 5000))
   {
-      timeSend = millis();
-      myFlag= !myFlag;
-      if(myFlag) 
-        arduino.println((flagAgend1)?'Y':'y');
-      else 
-        arduino.println((flagAgend2)?'Z':'z');  
+    timeSend = millis();
+    myFlag = !myFlag;
+    if (myFlag)
+      arduino.println((flagAgend1) ? 'Y' : 'y');
+    else
+      arduino.println((flagAgend2) ? 'Z' : 'z');
   }
 }
 
 //////////////////////////////////////////////////////////////////////////////
-String receiveData() {
-  if (arduino.available()) {
+String receiveData()
+{
+  if (arduino.available())
+  {
     String txt = "";
     while (arduino.available())
       txt = arduino.readStringUntil('\n');
@@ -170,10 +173,9 @@ bool initMyFS()
   return (SPIFFS.begin(true));
 }
 
-
 void verifyTimeReservation()
 {
-  if ((millis() - timerReservation1)>120000 && flagAgend1)
+  if ((millis() - timerReservation1) > 120000 && flagAgend1)
   {
     flagAgend1 = false;
     userReservation1 = "";
@@ -181,7 +183,7 @@ void verifyTimeReservation()
     Serial.println("################################TEMPO DA RESERVA 1 EXPIROU ########################################");
   }
 
-  if ((millis() - timerReservation2)>120000 && flagAgend2)
+  if ((millis() - timerReservation2) > 120000 && flagAgend2)
   {
     flagAgend2 = false;
     userReservation2 = "";
@@ -205,61 +207,49 @@ void saveUserFirebase(String username, String password)
 void serverHandlers()
 {
   // Route to load bootstrap.min.css file
-  server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/bootstrap.min.css", "text/css");
-  });
+  server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/bootstrap.min.css", "text/css"); });
   // Route to load bootstrap.bundle.min.js file
-  server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript");
-  });
+  server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript"); });
   // Route to load image-park.jpeg file
-  server.on("/image-park.jpeg", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/image-park.jpeg", "image/jpeg");
-  });
+  server.on("/image-park.jpeg", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/image-park.jpeg", "image/jpeg"); });
   // Route to load vaga-livre.png file
-  server.on("/vaga-livre.png", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/vaga-livre.png", "image/png");
-  });
+  server.on("/vaga-livre.png", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/vaga-livre.png", "image/png"); });
   // Route to load vaga-ocupada.png file
-  server.on("/vaga-ocupada.png", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/vaga-ocupada.png", "image/png");
-  });
+  server.on("/vaga-ocupada.png", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/vaga-ocupada.png", "image/png"); });
   // Route to load index.css file
-  server.on("/index.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/index.css", "text/css");
-  });
+  server.on("/index.css", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/index.css", "text/css"); });
   // Route to load index.js file
-  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/index.js", "text/javascript");
-  });
+  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/index.js", "text/javascript"); });
   // Route to load index.css file
-  server.on("/login.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/login.css", "text/css");
-  });
+  server.on("/login.css", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/login.css", "text/css"); });
   // Route to load login.js file
-  server.on("/login.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/login.js", "text/javascript");
-  });
-
-
-
-
+  server.on("/login.js", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/login.js", "text/javascript"); });
 
   /*--------------------------ENDPOINS---------------------------*/
   // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("-------->redirecionando para login.html");
-    request->redirect("/login");
-  });
+    request->redirect("/login"); });
 
   // Route for login / web page
-  server.on("/login", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("--------> login.html");
-    request->send(SPIFFS, "/login.html");
-  });
+    request->send(SPIFFS, "/login.html"); });
 
-  //POST request para login
-  server.on("/getin", HTTP_POST, [](AsyncWebServerRequest * request) {
+  // POST request para login
+  server.on("/getin", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     Serial.println("------> Req de /getin do login.html");
     if (!(request->hasParam("username", true) && request->hasParam("password", true)))
     {
@@ -285,12 +275,11 @@ void serverHandlers()
           request->redirect("/home");
         }
       }
-    }
-  });
-
+    } });
 
   // POST request para Cadastro de Usuario
-  server.on("/make-register", HTTP_POST, [](AsyncWebServerRequest * request) {
+  server.on("/make-register", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     Serial.println("------> Req de /register do register.html");
     if (!(request->hasParam("username", true) && request->hasParam("passwordUser", true) && request->hasParam("passwordAdmin", true)))
     {
@@ -314,23 +303,21 @@ void serverHandlers()
         Serial.println("--->Admin Inválido!Redirecionando para register.html");
         request->redirect("/register");
       }
-    }
-  });
-
-
+    } });
 
   // Route for root / web page
-  server.on("/register", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/register", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("--------> register.html");
-    request->send(SPIFFS, "/register.html");
-  });
+    request->send(SPIFFS, "/register.html"); });
   // Route for root / web page
-  server.on("/home", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/home", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("--------> Index.html");
-    request->send(SPIFFS, "/index.html");
-  });
+    request->send(SPIFFS, "/index.html"); });
 
-  server.on("/dados", HTTP_GET, [] (AsyncWebServerRequest * request) {
+  server.on("/dados", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     //dataStored = "D*1*1*1*0*0*0*0*0*";
     unsigned long time1=0;
     unsigned long time2=0;
@@ -346,10 +333,10 @@ void serverHandlers()
     dataStored += String(time1)+"*";
     dataStored += String(time2)+"*";
     String resp = "{\"status\":\"success\", \"data\":\"" + dataStored + "\"}";
-    request->send(200, "application/json", resp);
-  });
+    request->send(200, "application/json", resp); });
 
-  server.on("/openReserve1", HTTP_GET, [] (AsyncWebServerRequest * request) {
+  server.on("/openReserve1", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("--------> openReserve1:");
     if(flagAgend1)
     {
@@ -364,10 +351,10 @@ void serverHandlers()
         request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA ESTE USUÁRIO\"}");
     }
     else
-      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 1\"}");
-  });
-  
-  server.on("/openReserve2", HTTP_GET, [] (AsyncWebServerRequest * request) {
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 1\"}"); });
+
+  server.on("/openReserve2", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("--------> openReserve2:");
     if(flagAgend2)
     {
@@ -382,12 +369,11 @@ void serverHandlers()
         request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA ESTE USUÁRIO\"}");
     }
     else
-      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 2\"}");
-  });
-
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\": \"NÃO HÁ RESERVAS REGISTRADAS PARA O PARQUE 2\"}"); });
 
   // POST request para Cadastro de Usuario
-  server.on("/reservation1", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/reservation1", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("------> reservation1");
     String username = request->getParam("username")->value();
     String password = request->getParam("password")->value();
@@ -411,11 +397,10 @@ void serverHandlers()
       else
         request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"UPS!O ESPACO JÁ SE ENCONTRA RESERVADO!\"}");
       //request->redirect("/home");
-    }
-  });
+    } });
 
-
-  server.on("/reservation2", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/reservation2", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println("------> reservation2");
     String username = request->getParam("username")->value();
     String password = request->getParam("password")->value();
@@ -436,8 +421,7 @@ void serverHandlers()
       }
       else      
         request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"UPS! O ESPACO JÁ SE ENCONTRA RESERVADO!\"}");
-    }
-  });
+    } });
   server.onNotFound(notFound);
   server.begin();
 }

@@ -1,9 +1,8 @@
 /**************************************************
-     AUTHOR: ERIVELTO CLÉNIO DA COSTA E SILVA
-     FOR: 
-     CREATED AT: 10-09-2023.
-     Objectivo: Controlar um carro robotizado de 4 rodas por meio do uma página web
-   no computador ou celular, isso via WIFI.
+    AUTHOR: Otlevire
+    FOR: RUI e Colega
+    Universidade Metodista
+    CREATED AT: 10-09-2023.
 
 
   Principais Componentes usados:
