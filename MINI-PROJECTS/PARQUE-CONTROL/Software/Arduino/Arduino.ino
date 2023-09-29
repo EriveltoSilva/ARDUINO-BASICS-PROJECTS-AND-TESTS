@@ -33,9 +33,9 @@
 
 #define LED 13
 //----------------- PARQUE1 ------------------
-#define P1_LDR1 A0
-#define P1_LDR2 A1
-#define P1_LDR3 A2
+#define P1_LDR1 A8
+#define P1_LDR2 A9
+#define P1_LDR3 A10
 #define TRIGGER_RESERVATION1 4
 #define ECHO_RESERVATION1 5
 
