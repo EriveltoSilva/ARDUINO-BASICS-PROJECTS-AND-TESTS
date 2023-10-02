@@ -119,7 +119,7 @@ void setup() {
   lcd.print(" PROJECTO FINAL");
   Serial.begin(9600);
   delay(2500);
-  pinMode(BUZZER, LOW);
+  digitalWrite(BUZZER, LOW);
 
   modeGreen();
 }
@@ -194,18 +194,19 @@ void lerSensores() {
   Serial.println("DistanciaTras:" + String(distanciaTras));
   Serial.println("----------------------------------------------\n");
 
-  if ((distanciaFrente1 > 15) || (distanciaFrente2 > 15)) {
+  if (((distanciaFrente1 > 15) || (distanciaFrente2 > 15)) && mode=='A') {
     flagBarco = true;
     flagAlert = true;
-    distanciaBarco = (distanciaFrente1 > 5) ? "BARCO Á:" + String(distanciaFrente1) : "BARCO Á:" + String(distanciaFrente2);
+    distanciaBarco = (distanciaFrente1 > 5) ? "NAVIO Á:" + String(distanciaFrente1) : "NAVIO Á:" + String(distanciaFrente2);
     modeAlert();
-  } else if ((distanciaFrente1 > 5) || (distanciaFrente2 > 5)) {
+  } else if (((distanciaFrente1 > 5) || (distanciaFrente2 > 5)) && mode=='A') {
     flagBarco = true;
     flagAlert = false;
-    distanciaBarco = (distanciaFrente1 > 5) ? "BARCO Á:" + String(distanciaFrente1) : "BARCO Á:" + String(distanciaFrente2);
+    distanciaBarco = (distanciaFrente1 > 5) ? "NAVIO Á:" + String(distanciaFrente1) : "NAVIO Á:" + String(distanciaFrente2);
     flagAbrindo = true;
+
   } 
-  else if((distanciaFrente1 < 2) || (distanciaFrente2 < 2) && digitalRead(LIMIT_BRIDGE_CLOSE))
+  else if((distanciaFrente1 < 2) || (distanciaFrente2 < 2) && digitalRead(LIMIT_BRIDGE_CLOSE) && mode=='A')
   {
     if(flagAlert)
     {
@@ -218,8 +219,8 @@ void lerSensores() {
   Serial.println("LIMIT_CLOSE:"+String(digitalRead(LIMIT_BRIDGE_CLOSE)));
   Serial.println("LIMIT_OPEN:"+String(digitalRead(LIMIT_BRIDGE_OPEN)));
 
-  if (distanciaTras > 2 && flagBarco) {
-    distanciaBarco = "BARCO PASSANDO  ";
+  if (distanciaTras > 2 && flagBarco && mode=='A') {
+    distanciaBarco = "NAVIO PASSANDO  ";
     modeRed();
     flagPassando = true;
     tempoBarco = millis();
@@ -379,7 +380,7 @@ void modeAlert() {
   static bool aux = false;
   if (aux) {
     modeYellow();
-
+    turnOnAlarm();
   } else {
     modeOff();
     turnOffAlarm();
@@ -397,6 +398,7 @@ void modeGreen() {
   digitalWrite(led_amarelo_2, LOW);
   digitalWrite(led_vermelho_2, LOW);
   estadoSemaforo = "#### VERDE ####";
+  turnOffAlarm();
 }
 
 ///////////////////////////////////////////////////////////
@@ -409,7 +411,6 @@ void modeYellow() {
   digitalWrite(led_amarelo_2, HIGH);
   digitalWrite(led_vermelho_2, LOW);
   estadoSemaforo = "### AMARELO ###";
-  turnOnAlarm();
 }
 
 ///////////////////////////////////////////////////////////
@@ -422,6 +423,7 @@ void modeRed() {
   digitalWrite(led_amarelo_2, LOW);
   digitalWrite(led_vermelho_2, HIGH);
   estadoSemaforo = "## VERMELHO ##";
+  turnOnAlarm();
 }
 
 ///////////////////////////////////////////////////////////
@@ -433,5 +435,4 @@ void modeOff() {
   digitalWrite(led_verde_2, LOW);
   digitalWrite(led_amarelo_2, LOW);
   digitalWrite(led_vermelho_2, LOW);
-  turnOffAlarm();
 }
