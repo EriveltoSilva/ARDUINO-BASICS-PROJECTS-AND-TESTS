@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body{
+	background-image: url('tel.jpg');
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: cover;
+}
+
+main {
+	margin-top: 70px;
+}
+
+.box-blue{
+	background-color:rgb(53, 132, 211);
+}
+
+.box-blue-light{
+	background-color:rgb(107, 147, 216);
+}
+
+.box-orange{
+	background-color:rgb(159, 143, 121);
+}
+.box-orange-light{
+	background-color:rgb(181, 115, 29);
+}
+.box-gray{
+	background-color:rgb(178, 198, 215);
+}
+
+.box-red{
+	background-color:brown;
+}
+.box-dark{
+	background-color: #333030;
+}
+
+.box{
+	width: 100%;
+	max-width: 350px;
+	min-width: 250px;
+	padding: 20px;
+	border-radius:8px;
+}
+
+.box-image img{
+	width: 75px;
+	border-radius: 90px;
+	min-width: 35px;
+}
+.box-content h3, p{
+	text-align: end;
+}
+
+.box-content p{
+	color:#fff0f0;
+}
+
+.box-content button{
+	width: 150px !important;
+}
+
+footer p{
+	color: #fff;
+}
