@@ -36,8 +36,8 @@
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "NETHOUSE"                       /////
-#define PASSWORD "Eduanara3130"               /////
+#define SSID "SITE"                       /////
+#define PASSWORD "123456789"               /////
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
@@ -59,6 +59,13 @@ bool initMyFS();                              /////
 bool isUser(String, String);                  /////
 void serverHandlers();                        /////
 void saveUserFirebase(String, String);        /////
+bool isDoorOpen();
+bool isCoolerOn();
+void closeDoor();
+void openDoor();
+void turnOffCooler();
+void turnOnCooler();
+void readSensors();
 ///////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////
@@ -78,10 +85,14 @@ void setup() {
 
 ///////////////////////////////////////////////////////////////////////////////
 void loop() {
+  static byte cont=0;
   if (millis() - timeDelay > 1000) {
     timeDelay = millis();
     readSensors();
-    printLCD();
+    if(++cont==2){
+      cont=0;
+      printLCD();
+    }
     digitalWrite(LED, !digitalRead(LED));
   }
   delay(20);
@@ -103,12 +114,12 @@ void initConfig() {
   dht.begin();
   lcd.init();
   lcd.backlight();
-  lcd.setCursor(3,0);
-  lcd.print("Hello, world!");
-  lcd.setCursor(2,1);
-  lcd.print("Ywrobot Arduino!");
+  lcd.setCursor(0,0);
+  lcd.print("#    ISPB      #");
+  lcd.setCursor(0,1);
+  lcd.print("PROJECTO FINAL!");
   Serial.println("CONFIGURAÇÕES INICIAS SETADAS!");
-  delay(5000);
+  delay(3000);
 }
 
 /////////////////////////////////////////////////////////
@@ -119,6 +130,11 @@ void wifiConfig() {
   Serial.print("CONECTANDO A WIFI:");
   Serial.println(SSID);
   Serial.print("PROCURANDO");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("CONECTANDO A REDE");
+  lcd.setCursor(5,1);
+  lcd.print(SSID);
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
   for (int i = 0; WiFi.status() != WL_CONNECTED; i++) {
@@ -129,7 +145,13 @@ void wifiConfig() {
       ESP.restart();
   }
   Serial.print("\nCONECTADO AO WIFI NO IP:");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("##  CONECTADO ##");
+  lcd.setCursor(0,1);
+  lcd.print(WiFi.localIP());
   Serial.println(WiFi.localIP());
+  delay(5000);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -137,7 +159,7 @@ void readSensors() {
   humidity = dht.readHumidity();
   temperature = dht.readTemperature();
   flame = map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
-  smoke = map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
+  smoke = 100-map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println(F("Falha ao Ler os DHT11! Verifique as Conexões!"));
     humidity = temperature = 0;
@@ -224,8 +246,8 @@ void printLCD()
       lcd.print(isCoolerOn()?"ON":"OFF");
       
       lcd.setCursor(0, 1);
-      lcd.print("DOOR.....:");
-      lcd.print(isDoorOpen()?"OPEN":"CLOSED");      
+      lcd.print("LUZES....:");
+      lcd.print(isDoorOpen()?"ON":"OFF");      
     break;
   }
   if(++flag>2)flag=0;
@@ -269,12 +291,12 @@ void serverHandlers() {
       request->send(SPIFFS, "/humidity.png", "image/jpeg");
     });
      
-  server.on("/doorClose.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-      request->send(SPIFFS, "/doorClose.png", "image/jpeg");
+  server.on("/lampOff.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/lampOff.png", "image/jpeg");
     }); 
     
-   server.on("/doorOpen.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-      request->send(SPIFFS, "/doorOpen.png", "image/jpeg");
+   server.on("/lampOn.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/lampOn.png", "image/jpeg");
     }); 
     server.on("/fire.png", HTTP_GET, [](AsyncWebServerRequest *request) {
       request->send(SPIFFS, "/fire.png", "image/jpeg");
@@ -410,7 +432,7 @@ void serverHandlers() {
   });
 
   server.on("/door", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("--------> door");
+    Serial.println("--------> luzes");
     if (isDoorOpen())
       closeDoor();
     else

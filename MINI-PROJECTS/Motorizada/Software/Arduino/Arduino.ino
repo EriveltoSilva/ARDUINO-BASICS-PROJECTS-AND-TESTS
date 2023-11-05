@@ -7,9 +7,11 @@
 #define MOTOR 4
 #define INTERRUPTOR 12
 #define LED 13
+#define TIME_TO_TURN_OFF 10000
 
-bool flagStart = false, flagStarCar = false;
-unsigned long int timeDelay = 0;
+bool flagStart = false, flagStarCar = false, flagTimer=false;
+String motivo="";
+unsigned long int timeDelay = 0, temporizador=0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
@@ -42,15 +44,30 @@ void setup() {
 }
 
 void loop() {
-  if (!hasCapacete() && digitalRead(MOTOR))
+  if(!hasCapacete() && digitalRead(MOTOR) && !flagTimer)
   {
+    flagTimer=true;
+    temporizador=millis(); 
     printLCD("### CAPACETE ###", "   RETIRADO   ");
+  }
+  else if(!hasCapacete() && digitalRead(MOTOR) && flagTimer)
+  {
+    printLCD( "MOTO DESLIGANDO...","EM:"+String((TIME_TO_TURN_OFF-millis()-temporizador)/1000)+"s");
+    if(millis()-temporizador>TIME_TO_TURN_OFF)
+    {
+      printLCD("### CAPACETE ###", "   RETIRADO   ");
+      delay(3000);
+      printLCD("### DESLIGANDO ###", "     A MOTO     ");
+      delay(3000);
+      flagStarCar = flagTimer =false;
+      motivo="CAPACETE RETIRADO";
+      digitalWrite(MOTOR, LOW);
+      printLCD("### DESLIGANDO ###", "     A MOTO     ");
+    }
+  }
+  else if(hasCapacete() && digitalRead(MOTOR) && flagTimer ){
+    printLCD("### CAPACETE ###", "   RECOLOCADO   ");
     delay(3000);
-    printLCD("### DESLIGANDO ###", "     A MOTO     ");
-    delay(3000);
-    flagStarCar = false;
-    digitalWrite(MOTOR, LOW);
-    printLCD("### DESLIGANDO ###", "     A MOTO     ");
   }
 
   if (flagStarCar && !digitalRead(INTERRUPTOR))
@@ -65,12 +82,13 @@ void loop() {
   }
   else if (!flagStarCar && !digitalRead(INTERRUPTOR)) {
     Serial.println("NÃO TEM PERMISSÃO DE LIGAR A MOTO NESSAS CONDIÇÕES");
-    printLCD("# ALERTA ALCOOL#", "#NAO PODE LIGAR#");
+    printLCD("### ATENCAO ####", motivo);
   }
 
   digitalWrite(LED, !digitalRead(LED));
   delay(100);
 }
+
 
 
 ///////////////////////////////////////////////////////////////////
@@ -153,6 +171,7 @@ void startTest()
   else if (alcool)
   {
     flagStarCar = false;
+    motivo="ALCOOL DETECTADO";
     Serial.println("ALCOOL DETECTADO, NÃO PODE LIGAR");
     printLCD("   TEM ALCOOL   ", " NAO PODE LIGAR   ");
   }

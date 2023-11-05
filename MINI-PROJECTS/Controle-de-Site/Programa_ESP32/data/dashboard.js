@@ -91,8 +91,8 @@ function receiveData() {
                 btnCooler.innerHTML = (dados[5] == "1") ? "DESLIGAR" : "LIGAR";
                 document.getElementById('imgVentilador').src = (dados[5] == "1") ? "ventilador.png" :"ventiladorOff.png";
                 
-                btnDoor.innerHTML = (dados[6] == "1") ? "FECHAR" : "ABRIR";
-                document.getElementById('imgDoor').src = (dados[6] == "1") ? "doorOpen.png" :"doorClose.png";
+                btnDoor.innerHTML = (dados[6] == "1") ? "APAGAR" : "ACENDER";
+                document.getElementById('imgDoor').src = (dados[6] == "1") ? "lampOn.png" :"lampOff.png";
             }
         })
         .catch(error => { console.error("## ERRO PEGANDO OS DADOS:" + error); })
