@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Login de operador de gerador">
+    <meta name="author" content="Erivelto Clénio da Costa e Silva (Otlevire)">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Smart Gerador | Controle e Monitoramento </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="index.css">
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <section>
+        <div class="banner">
+            <div class="content-banner">
+                <h1>Smart <span>Gerador</span></h1>
+                <p>Oferecendo <span>segurança e automação</span> de alta qualidade!</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        
+        
+        <div class="row">
+            <div class="col-12 mt-5">
+                <h2 class="text-center t-primary">Monitoramento</h2>
+            </div>
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Temperatura</p>
+                    <h3 id="temperatura">5V</h3>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Humidade</p>
+                    <h3 id="humidade">5V</h3>
+                </div>
+            </div>
+
+           
+
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Tensão da Rede</p>
+                    <h3 id="tensaoRede">5V</h3>
+                </div>
+            </div>
+
+
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Potência da Rede</p>
+                    <h3 id="potenciaRede">0W</h3>
+                </div>
+            </div>
+            
+            
+            
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Tensão do Gerador</p>
+                    <h3 id="tensaoGerador">5V</h3>
+                </div>
+            </div>
+
+
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Potência do Gerador</p>
+                    <h3 id="potenciaGerador">0W</h3>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Corrente Medida</p>
+                    <h3 id="corrente">0A</h3>
+                </div>
+            </div>
+            
+            
+            <div class="col-12 col-sm-6 p-5">
+                <div class="icons">
+                    <p>Tensão da Batéria</p>
+                    <h3 id="tensaoBateria">0V</h3>
+                </div>
+            </div>
+           
+        </div>
+    </section>
+
+
+
+    <section id="controlo">
+        <div class="w-75 mx-auto">
+            <form action="">
+                <h2 class="t-primary">Controlo do Gerador</h2>
+                <div class="row justify-content-center">
+                    <div class="col-12 col-sm-6 col-md-4 m-2">
+                        <button type="button" class="btn btn-outline-danger text-center" id="btnModo">Modo</button>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-4 m-2">
+                        <button type="button" class="btn btn-outline-danger" id="btnGerador">Gerador</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <p class="text-center">&copy; EmoTech - Todos os Direitos Reservados </p>
+    </footer>
+    <script src="bootstrap.bundle.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>

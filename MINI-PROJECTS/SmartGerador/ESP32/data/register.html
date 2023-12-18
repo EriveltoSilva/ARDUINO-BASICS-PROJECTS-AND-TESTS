@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-ao">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Cadastro de operador de gerador">
+    <meta name="author" content="Erivelto Clénio da Costa e Silva (Otlevire)">
+
+    <title>Smart Gerador | Registro de Usuário </title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="gerador.png" type="image/x-icon">
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="aos.css">
+</head>
+
+<body>
+    <div class="background">
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    <form action="/make-register" method="post">
+        <h3 data-aos="fade-up"  data-aos-delay="1000">Cadastro de Novo Usuário</h3>
+
+        <div data-aos="fade-up"  data-aos-delay="1000">
+            <label for="username">Username</label>
+            <input type="text" placeholder="Digite o username do Usuário" id="username" name="username" required>
+        </div>
+
+        <div data-aos="fade-up"  data-aos-delay="1000">
+            <label for="password">Senha do Usuário</label>
+            <input type="password" placeholder="Digite a senha para o Usuário" id="passwordUser" name="passwordUser" required>
+        </div>
+
+        <div data-aos="fade-up"  data-aos-delay="1000">
+            <label for="password">Senha do Admin</label>
+            <input type="password" placeholder="Digite a senha de Admin" id="passwordAdmin" name="passwordAdmin" required>
+        </div>
+            
+        <div data-aos="fade-up"  data-aos-delay="1000">
+            <button type="submit">Fazer Registro</button>
+        </div>
+
+    </form>
+
+    <script src="aos.js"></script>
+    <script>
+        AOS.init();
+      </script>
+</body>
+
+</html>

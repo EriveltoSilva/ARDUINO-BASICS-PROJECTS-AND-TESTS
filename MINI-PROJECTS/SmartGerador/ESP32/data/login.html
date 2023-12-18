@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-ao">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Login de operador de gerador">
+    <meta name="author" content="Erivelto Clénio da Costa e Silva (Otlevire)">
+    <title>Smart Gerador | Login </title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="gerador.jpg" type="image/x-icon">
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="aos.css">
+</head>
+
+<body>
+    <div class="background">
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    <form action="/getin" method="post">
+        <h3 data-aos="fade-up"  data-aos-delay="500">Login</h3>
+
+        <div data-aos="fade-up"  data-aos-delay="1000">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username" placeholder="Digite o seu username" required>
+        </div>
+
+        <div data-aos="fade-up"  data-aos-delay="500">
+
+            <label for="password">Senha</label>
+            <input type="password" name="password" id="password" placeholder="Digite a sua password" required>
+        </div>
+
+        <div data-aos="fade-up"  data-aos-delay="500">
+
+            <button type="submit">Entrar</button>
+        </div>
+
+    </form>
+
+    <script src="aos.js"></script>
+    <script>
+        AOS.init();
+      </script>
+</body>
+
+</html>
