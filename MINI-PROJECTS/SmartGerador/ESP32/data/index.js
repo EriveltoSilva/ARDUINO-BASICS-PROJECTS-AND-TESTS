@@ -11,7 +11,7 @@ const humidade = document.getElementById("humidade");
 const temperatura = document.getElementById("temperatura");
 
 const corrente = document.getElementById("corrente");
-const tensaoBateria = document.getElementById("tensaoBateria");
+// const tensaoBateria = document.getElementById("tensaoBateria");
 
 
 window.addEventListener('load', () => {
@@ -61,7 +61,7 @@ function receiveData() {
                 tensaoGerador.innerHTML = dados[6] + "V";
                 potenciaGerador.innerHTML = dados[7] + "W"; 
                 
-                tensaoBateria.innerHTML = dados[8] + "V";
+                // tensaoBateria.innerHTML = dados[8] + "V";
                 
                 btnModoGerador.innerHTML = (dados[9]==="A")? "AUTOMÁTICO": "MANUAL";
                 btnGerador.innerHTML = (dados[10]==="0")? "DESLIGADO": "LIGADO";
