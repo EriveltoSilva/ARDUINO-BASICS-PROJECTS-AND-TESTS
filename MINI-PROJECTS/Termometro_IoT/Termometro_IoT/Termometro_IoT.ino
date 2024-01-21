@@ -53,7 +53,7 @@ void setup() {
   initSetup();
   Serial.begin(115200);
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
-  timer.setInterval(1000L, sendDataToBlynk);
+  timer.setInterval(2000L, sendDataToBlynk);
 }
 
 /////////////////////////////////////////////////////
@@ -79,7 +79,6 @@ void initSetup() {
 void lerSensores() {
   humidade = dht.readHumidity();
   temperatura = dht.readTemperature();
-
   if (isnan(humidade) || isnan(temperatura)) {
     Serial.println(F("Falha ao ler o sensor!"));
     temperatura = humidade = 0;

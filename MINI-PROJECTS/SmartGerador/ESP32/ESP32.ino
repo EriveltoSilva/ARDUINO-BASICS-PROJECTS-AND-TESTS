@@ -204,6 +204,15 @@ void serverHandlers()
     request->send(SPIFFS, "/aos.js", "text/javascript");
   });
 
+  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    request->send(SPIFFS, "/index.js", "text/javascript");
+  });
+
+  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    request->send(SPIFFS, "/script.js", "text/javascript");
+  });
 
   server.on("/gerador.jpg", HTTP_GET, [](AsyncWebServerRequest * request)
   {
@@ -214,11 +223,10 @@ void serverHandlers()
   {
     request->send(SPIFFS, "/index.css", "text/css");
   });
+  
+  
 
-  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest * request)
-  {
-    request->send(SPIFFS, "/index.js", "text/javascript");
-  });
+  
 
   server.on("/login.css", HTTP_GET, [](AsyncWebServerRequest * request)
   {

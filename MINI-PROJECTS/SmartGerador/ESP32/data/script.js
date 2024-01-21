@@ -52,8 +52,9 @@ function receiveData() {
 
             if(dados[0]==='D')
             {
-                temperatura.innerHTML = dados[1] + "A";
-                humidade.innerHTML = dados[2] + "V";
+                console.log("DAdos");
+                temperatura.innerHTML = dados[1] + "*C";
+                humidade.innerHTML = dados[2] + "%";
                 corrente.innerHTML = dados[3] + "A";
                 tensaoRede.innerHTML = dados[4] + "V";
                 potenciaRede.innerHTML = dados[5] + "W";
