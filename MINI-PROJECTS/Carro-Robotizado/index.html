@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Página para controle de Carro Robotizado!">
+    <meta name="keywords" content="Página, Carro,Robotico, Robotizado, 4WD, Controle, WIFI, Projecto">
+    <meta name="author" content="Erivelto Clénio da Costa e Silva">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyCar - Controle de Carro</title>
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        header img {
+            width: 100px;
+            height: 100px;
+        }
+
+        header h3 {
+            color: #0f60ca;
+            margin-top: 5px;
+            text-align: center;
+
+        }
+
+        .centralizado {
+            width: 80%;
+            margin: auto;
+        }
+
+        .contentor {
+            height: 460px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .contentor-botao {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .botao {
+            background-color: #111b29;
+            width: 50%;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-width: 0px;
+        }
+
+        .lado-a-lado {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .m-vertical {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .m-horizontal {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="centralizado">
+        <img class="mx-5" src="http://www.senith.lk/media/2016/11/robot%20car%20chassis.png" alt="">
+        <h3>Controle <strong> do Carro</strong></h3>
+    </header>
+
+    <main class="centralizado contentor">
+        <div class="contentor-botao">
+            <button id="botaoFrente" class="botao">
+                Frente
+            </button>
+        </div>
+
+        <div class="contentor-botao m-vertical">
+            <div class="lado-a-lado">
+                <button id="botaoEsquerda" class="botao  m-horizontal">
+                    Esquerda
+                </button>
+                <button id="botaoDireita" class="botao  m-horizontal">
+                    Direita
+                </button>
+            </div>
+        </div>
+
+        <div class="contentor-botao m-vertical">
+            <button id="botaoRecuar" class="botao">
+                Recuar
+            </button>
+        </div>
+
+        <div class="contentor-botao m-vertical">
+            <button id="botaoParar" type="button" class="botao">
+                Parar
+            </button>
+        </div>
+
+        <div class="row">
+            <div class="col form-check">
+                <label class="form-check-label" for="flexCheckDefault">
+
+                </label>
+            </div>
+            <div class=" col form-check">
+                <input class="form-check-input" type="checkbox" value="" id="checkPresenca" nome="estadoPresenca">
+                <label class="form-check-label" for="estadoPresenca">
+                    S.Prensença
+                </label>
+            </div>
+        </div>
+    </main>
+
+
+    <script>
+        function requisicaoGet(stringRequisicao) {
+            var req = new XMLHttpRequest();
+            req.onreadystatechange = function () {
+                if (this.status == 200 && this.readyState == 4)
+                    if (this.getResponseHeader(stringRequisicao) != null)
+                        console.log(this.getResponseHeader(stringRequisicao));
+            }
+            req.open("GET", "/" + stringRequisicao, true);
+            req.send(null);
+        }
+
+        window.onload = function () {
+            document.getElementById("botaoFrente").addEventListener("click", () => { requisicaoGet("carroFrente"); });
+            document.getElementById("botaoEsquerda").addEventListener("click", () => { requisicaoGet("carroEsquerda"); });
+            document.getElementById("botaoDireita").addEventListener("click", () => { requisicaoGet("carroDireita"); });
+            document.getElementById("botaoParar").addEventListener("click", () => { requisicaoGet("carroParar"); });
+            document.getElementById("botaoRecuar").addEventListener("click", () => { requisicaoGet("carroRecuar"); });
+            document.getElementById("checkPresenca").onchange = () => {
+                let valorCheck = (document.getElementById("checkPresenca").checked) ? "1" : "0";
+                requisicaoGet("estadoPresenca?estado=" + valorCheck);
+            }
+        }
+    </script>
+</body>
+
+</html>
