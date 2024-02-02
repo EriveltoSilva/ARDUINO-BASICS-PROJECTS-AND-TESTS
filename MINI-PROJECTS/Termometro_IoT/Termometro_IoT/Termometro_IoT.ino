@@ -72,7 +72,7 @@ void initSetup() {
   lcd.setCursor(0, 0);
   lcd.print("#   PROJECTO   #");
   lcd.setCursor(0, 1);
-  lcd.print("# FILIPE LOPES #");
+  lcd.print("#    TDAUTO    #");
 }
 
 /////////////////////////////////////////////////////
