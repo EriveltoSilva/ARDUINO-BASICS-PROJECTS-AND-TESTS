@@ -47,20 +47,18 @@ function receiveData() {
             if (dados[0] == 'D') {
 
                 temperatureSensor.innerHTML = dados[1]+"*C";
-                if (dados[1] >= 35)
+                if (dados[1] >= 22)
                     temperatureLevel.innerHTML = "ALTA";
-                else if (dados[1] >= 10)
-                    temperatureLevel.innerHTML = "NORMAL";
                 else
-                    temperatureLevel.innerHTML = "BAIXA";
+                    temperatureLevel.innerHTML = "NORMAL";
 
                 humiditySensor.innerHTML = dados[2]+"%";
-                if (dados[1] >= 85)
-                    humidityLevel.innerHTML = "ALTA";
-                else if (dados[1] >= 45)
-                    humidityLevel.innerHTML = "NORMAL";
-                else
-                    humidityLevel.innerHTML = "BAIXA";
+                humidityLevel.innerHTML = dados[7];
+                // if (dados[1] >= 85)
+                // else if (dados[1] >= 45)
+                //     humidityLevel.innerHTML = "NORMAL";
+                // else
+                //     humidityLevel.innerHTML = "BAIXA";
                 
                 flameSensor.innerHTML = dados[3]+"%";
                 if(dados[3] >= 65)
@@ -88,11 +86,12 @@ function receiveData() {
                     document.getElementById('imgSmokeSensor').src = "nosmoke.png";
                 }
         
-                btnCooler.innerHTML = (dados[5] == "1") ? "DESLIGAR" : "LIGAR";
+                btnCooler.innerHTML = (dados[5] == "1") ? "LIGADO" : "DESLIGADO";
                 document.getElementById('imgVentilador').src = (dados[5] == "1") ? "ventilador.png" :"ventiladorOff.png";
                 
                 btnDoor.innerHTML = (dados[6] == "1") ? "APAGAR" : "ACENDER";
                 document.getElementById('imgDoor').src = (dados[6] == "1") ? "lampOn.png" :"lampOff.png";
+                
             }
         })
         .catch(error => { console.error("## ERRO PEGANDO OS DADOS:" + error); })
