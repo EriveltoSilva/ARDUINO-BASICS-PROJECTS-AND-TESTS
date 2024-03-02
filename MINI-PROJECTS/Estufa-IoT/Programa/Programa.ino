@@ -12,79 +12,83 @@
 **************************************************/
 
 ////////////////// Libraries Used  ////////////////
-#include <WiFi.h>                             /////
-#include "DHT.h"                              /////
-#include <Wire.h>                             /////
-#include "SPIFFS.h"                           /////
-#include <AsyncTCP.h>                         /////
-#include <ArduinoJson.h>                      /////
-#include <ESPAsyncWebServer.h>                /////
-#include <LiquidCrystal_I2C.h>                /////
-#include <IOXhop_FirebaseESP32.h>             /////
+#include <WiFi.h>                  /////
+#include "DHT.h"                   /////
+#include <Wire.h>                  /////
+#include "SPIFFS.h"                /////
+#include <AsyncTCP.h>              /////
+#include <ArduinoJson.h>           /////
+#include <ESPAsyncWebServer.h>     /////
+#include <LiquidCrystal_I2C.h>     /////
+#include <IOXhop_FirebaseESP32.h>  /////
 ///////////////////////////////////////////////////
 
 ////////////////  PIN CONFIGURATIONS ///////////////
-#define LED 2                                  /////
-#define LIGHTS 4                               /////
-#define BUZZER 5                               /////
-#define DHTPIN 15                              /////
-#define BTN_PUMP 18                            /////
-#define BTN_STATUS 19                          /////
-#define BTN_LIGHTS 12                          /////
-#define PUMP 23                                /////
-#define FLAME_SENSOR 34                        /////
-#define SMOKE_SENSOR 35                        /////
-#define LDR_SENSOR 39                          /////
-#define SOIL_SENSOR 36                         /////
+#define LED 2            /////
+#define LIGHTS 4         /////
+#define BUZZER 5         /////
+#define DHTPIN 15        /////
+#define BTN_PUMP 18      /////
+#define BTN_STATUS 19    /////
+#define BTN_LIGHTS 12    /////
+#define PUMP 23          /////
+#define FLAME_SENSOR 34  /////
+#define SMOKE_SENSOR 35  /////
+#define LDR_SENSOR 39    /////
+#define SOIL_SENSOR 36   /////
 ////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////
 #define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"
 #define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"
-#define DHTTYPE DHT11                         /////
-#define LIMIAR_FLAME 65                       /////
-#define LIMIAR_SMOKE 60                       /////
+/////////////////////////////////////////////////////
+
+///////////// OTHER CONSTANTS DEFINITIONS /////////
+#define DHTTYPE DHT11    /////
+#define LIMIAR_FLAME 65  /////
+#define LIMIAR_SMOKE 60  /////
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "ESTUFA"                         /////
-#define PASSWORD "123456789"                  /////
+#define SSID "ESTUFA"         /////
+#define PASSWORD "123456789"  /////
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
-char status = 'A';                            /////
-bool buzzerPreviewStatus = false;             /////
-unsigned long int timeDelay = 0;              /////
-float temperature = 0, humidity = 0;          /////
-int flame = 0, smoke = 0, lights=0, soil=0;   /////
-bool flagSmoke = false, flagFlame = false, flagSoil=false;    /////
-///////////////////////////////////////////////////////////////////
+char status = 'A';                               /////
+bool buzzerPreviewStatus = false;                /////
+unsigned long int timeDelay = 0;                 /////
+float temperature = 0, humidity = 0;             /////
+int flame = 0, smoke = 0, lights = 0, soil = 0;  /////
+bool flagSmoke = false, flagFlame = false;       /////
+bool flagSoil = false;                           /////
+///////////////////////////////////////////////////
 
 ///////////////  OBJECTS DEFINITIONS  /////////////
-DHT dht(DHTPIN, DHTTYPE);                     /////
-AsyncWebServer server(80);                    /////
-LiquidCrystal_I2C lcd(0x27, 20, 4);           /////
+DHT dht(DHTPIN, DHTTYPE);            /////
+AsyncWebServer server(80);           /////
+LiquidCrystal_I2C lcd(0x27, 20, 4);  /////
 ///////////////////////////////////////////////////
 
 ////////////// FUNCTION DEFINITIONS  //////////////
-void wifiConfig();                            /////
-void initConfig();                            /////
-bool initMyFS();                              /////
-bool isUser(String, String);                  /////
-void serverHandlers();                        /////
-void saveUserFirebase(String, String);        /////
-bool isPumpOn();                              /////
-bool isBuzzerOn();                            /////
-bool isLightsOn();                            /////
-void readSensors();                           /////
-void turnOnLights();                          /////
-void turnOffLights();                         /////
-void turnOnPump();                            /////
-void turnOffPump();                           /////
-void turnOnBuzzer();                          /////
-void turnOffBuzzer();                         /////
-void buttonsHandler();                        /////
+void wifiConfig();                      /////
+void initConfig();                      /////
+bool initMyFS();                        /////
+bool isUser(String, String);            /////
+void serverHandlers();                  /////
+void saveUserFirebase(String, String);  /////
+bool isPumpOn();                        /////
+bool isBuzzerOn();                      /////
+bool isLightsOn();                      /////
+void readSensors();                     /////
+void turnOnLights();                    /////
+void turnOffLights();                   /////
+void turnOnPump();                      /////
+void turnOffPump();                     /////
+void turnOnBuzzer();                    /////
+void turnOffBuzzer();                   /////
+void buttonsHandler();                  /////
 ///////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////
@@ -97,21 +101,18 @@ void setup() {
   initConfig();
   wifiConfig();
   Serial.println(initMyFS() ? " ## PARTIÇÃO SPIFFS MONTADA! ##" : " ## ERRO MONTANDO A PARTIÇÃO SPIFFS ##");
-  //Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  //serverHandlers();
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  serverHandlers();
   Serial.println(" ##-------SISTEMA DE DOMÓTICA!--------##");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void loop() 
-{
+void loop() {
   static byte cont = 0;
-  if (millis() - timeDelay > 1000) 
-  {
+  if (millis() - timeDelay > 1000) {
     timeDelay = millis();
     readSensors();
-    if (++cont == 2) 
-    {
+    if (++cont == 2) {
       cont = 0;
       printLCD();
     }
@@ -132,7 +133,7 @@ void initConfig() {
 
   pinMode(PUMP, OUTPUT);
   digitalWrite(PUMP, LOW);
-  
+
   pinMode(LIGHTS, OUTPUT);
   digitalWrite(LIGHTS, LOW);
 
@@ -149,9 +150,9 @@ void initConfig() {
   lcd.print("#  UNIV.CATOLICA  #");
   lcd.setCursor(0, 1);
   lcd.print("#  PROJECTO FINAL #");
-  lcd.setCursor(0, 2); 
+  lcd.setCursor(0, 2);
   lcd.print("#      ESTUFA     #");
-  lcd.setCursor(0, 3); 
+  lcd.setCursor(0, 3);
   lcd.print("BY:MARIA TUWIZANA");
 
   delay(1000);
@@ -198,32 +199,29 @@ void wifiConfig() {
 
 //////////////////////////////////////////////////////////////////////////////
 void readSensors() {
-  humidity    = dht.readHumidity();
+  humidity = dht.readHumidity();
   temperature = dht.readTemperature();
   // flame       = map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
-  flame       = 100 - map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
-  smoke       = 100 - map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
-  lights      = 100 - map(analogRead(LDR_SENSOR), 0, 4095, 0, 100);
-  soil        = 100 - map(analogRead(SOIL_SENSOR), 0, 4095, 0, 100);
-  
+  flame = 100 - map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
+  smoke = 100 - map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
+  lights = 100 - map(analogRead(LDR_SENSOR), 0, 4095, 0, 100);
+  soil = 100 - map(analogRead(SOIL_SENSOR), 0, 4095, 0, 100);
+
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println(F("Falha ao Ler os DHT11! Verifique as Conexões!"));
     humidity = temperature = 0;
   }
 
-  if(status == 'A'){
-    if(soil < 30 &&  !flagSoil)
-    {
+  if (status == 'A') {
+    if (soil < 30 && !flagSoil) {
       flagSoil = true;
       turnOnPump();
-    }
-    else if(flagSoil && soil > 90)
-    {
+    } else if (flagSoil && soil > 90) {
       flagSoil = false;
       turnOffPump();
     }
-    
-    if(lights < 50)
+
+    if (lights < 50)
       turnOnLights();
     else
       turnOffLights();
@@ -244,21 +242,20 @@ void readSensors() {
     flagSmoke = false;
     turnOffBuzzer();
   }
-  
-  Serial.println("TEMP.....:"+String(temperature)+"%");
-  Serial.println("HUM......:"+String(humidity)+"%");
-  Serial.println("CHAMAS...:"+String(flame)+"%");
-  Serial.println("FUMO.....:"+String(smoke)+"%");
-  Serial.println("HUM. SOLO:"+String(soil)+"%");
-  Serial.println("CLAREZA..:"+String(lights)+"%");
-  Serial.println("LUZES....:"+isLightsOn() ? "ON" : "OFF");
-  Serial.println("BOMBA....:"+isPumpOn() ? "ON" : "OFF");
-  Serial.println("ESTADO PROEJCTO....:"+String(status));
+
+  Serial.println("TEMP.....:" + String(temperature) + "%");
+  Serial.println("HUM......:" + String(humidity) + "%");
+  Serial.println("CHAMAS...:" + String(flame) + "%");
+  Serial.println("FUMO.....:" + String(smoke) + "%");
+  Serial.println("HUM. SOLO:" + String(soil) + "%");
+  Serial.println("CLAREZA..:" + String(lights) + "%");
+  Serial.println("LUZES....:" + isLightsOn() ? "ON" : "OFF");
+  Serial.println("BOMBA....:" + isPumpOn() ? "ON" : "OFF");
+  Serial.println("ESTADO PROEJCTO....:" + String(status));
 }
 
 ////////////////////////////////////////////////////////////////////////
-bool initMyFS() 
-{
+bool initMyFS() {
   return (SPIFFS.begin(true));
 }
 
@@ -271,72 +268,66 @@ void saveUserFirebase(String username, String password) {
   Firebase.setString("/users/" + username, password);
 }
 
-void buttonsHandler()
-{
-  if(!digitalRead(BTN_STATUS))
-  {
-    status = (status=='A')? 'M': 'A';
+void buttonsHandler() {
+  if (!digitalRead(BTN_STATUS)) {
+    status = (status == 'A') ? 'M' : 'A';
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("####################");
     lcd.setCursor(0, 1);
     lcd.print(" MUDANDO DE ESTADO ");
     lcd.setCursor(0, 2);
-    lcd.print(" ESTADO "+String((status=='A')?"AUTOMATICO":"MANUAL"));
+    lcd.print(" ESTADO " + String((status == 'A') ? "AUTOMATICO" : "MANUAL"));
     lcd.setCursor(0, 3);
     lcd.print("####################");
-    while(!digitalRead(BTN_STATUS));
+    while (!digitalRead(BTN_STATUS))
+      ;
   }
 
-  if(!digitalRead(BTN_PUMP) && status=='M')
-  {
+  if (!digitalRead(BTN_PUMP) && status == 'M') {
     unsigned long int pressTime = millis();
-    while(!digitalRead(BTN_PUMP))
-    {
+    while (!digitalRead(BTN_PUMP)) {
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("####################");
       lcd.setCursor(0, 1);
       lcd.print(" BOTAO PRESSIONADO ");
       lcd.setCursor(0, 2);
-      lcd.print("      TEMPO:"+String((millis()-pressTime)/1000)+"s");
+      lcd.print("      TEMPO:" + String((millis() - pressTime) / 1000) + "s");
       lcd.setCursor(0, 3);
       lcd.print("####################");
       delay(500);
     }
-    
+
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("####################");
     lcd.setCursor(0, 1);
-    
 
-    if(millis()-pressTime>3000)
-    {
-      if(isLightsOn())
+
+    if (millis() - pressTime > 3000) {
+      if (isLightsOn())
         turnOffLights();
-      else 
+      else
         turnOnLights();
-      
+
       lcd.print(" ESTADO DAS LUZES ");
       lcd.setCursor(5, 2);
-      lcd.print(String((isLightsOn())?"LIGADAS":"DESLIGADAS"));  
-    }
-    else{
-      if(isPumpOn())
+      lcd.print(String((isLightsOn()) ? "LIGADAS" : "DESLIGADAS"));
+    } else {
+      if (isPumpOn())
         turnOffPump();
       else
         turnOnPump();
-      
+
       lcd.print(" ESTADO DA BOMBA ");
       lcd.setCursor(5, 2);
-      lcd.print(String((isPumpOn())?"LIGADA":"DESLIGADA"));
+      lcd.print(String((isPumpOn()) ? "LIGADA" : "DESLIGADA"));
     }
 
     lcd.setCursor(0, 3);
     lcd.print("####################");
   }
-
 }
 
 bool isLightsOn() {
@@ -351,13 +342,11 @@ void turnOffLights() {
   digitalWrite(LIGHTS, LOW);
 }
 
-bool isBuzzerOn()
-{
+bool isBuzzerOn() {
   return (digitalRead(BUZZER));
 }
 
-void bipBuzzer()
-{
+void bipBuzzer() {
   buzzerPreviewStatus = isBuzzerOn();
   turnOffBuzzer();
   turnOnBuzzer();
@@ -368,9 +357,9 @@ void bipBuzzer()
   delay(250);
   turnOffBuzzer();
 
-  if(buzzerPreviewStatus)
+  if (buzzerPreviewStatus)
     turnOnBuzzer();
-  else 
+  else
     turnOffBuzzer();
 }
 
@@ -382,8 +371,7 @@ void turnOffBuzzer() {
   digitalWrite(BUZZER, LOW);
 }
 
-bool isPumpOn()
-{
+bool isPumpOn() {
   return (!digitalRead(PUMP));
 }
 
@@ -400,7 +388,7 @@ void printLCD() {
   lcd.init();
   lcd.clear();
   lcd.setCursor(0, 0);
- 
+
   switch (flag) {
     case 0:
       lcd.print("TEMPERTURA:");
@@ -411,7 +399,7 @@ void printLCD() {
       lcd.print("HUM. AR...:");
       lcd.print(humidity);
       lcd.print("%");
-          
+
       lcd.setCursor(0, 2);
       lcd.print("CHAMAS....:");
       lcd.print(flame);
@@ -432,7 +420,7 @@ void printLCD() {
       lcd.print("CLAREZA...:");
       lcd.print(lights);
       lcd.print("%");
-          
+
       lcd.setCursor(0, 2);
       lcd.print("LUZES.....:");
       lcd.print(isLightsOn() ? "ON" : "OFF");
@@ -442,7 +430,7 @@ void printLCD() {
       lcd.print(isPumpOn() ? "ON" : "OFF");
       break;
   }
-  
+
   lcd.setCursor(19, 0);
   lcd.print(status);
   if (++flag == 2) flag = 0;
@@ -450,7 +438,7 @@ void printLCD() {
 
 
 
-/*
+
 ////////////////////////////////////////////////////////////////////////
 void serverHandlers() {
   // Route to load bootstrap.min.css file
@@ -515,17 +503,17 @@ void serverHandlers() {
     request->send(SPIFFS, "/temperature.jpeg", "image/jpeg");
   });
 
-  server.on("/ventilador.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/ventilador.png", "image/jpeg");
-  });
-  server.on("/ventiladorOff.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/ventiladorOff.png", "image/jpeg");
-  });
+  // server.on("/ventilador.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   request->send(SPIFFS, "/ventilador.png", "image/jpeg");
+  // });
+  // server.on("/ventiladorOff.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   request->send(SPIFFS, "/ventiladorOff.png", "image/jpeg");
+  // });
 
 
 
 
-  //--------------------------ENDPOINS---------------------------
+  /*--------------------------ENDPOINS---------------------------*/
   // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     Serial.println("-------->redirecionando para login.html");
@@ -604,33 +592,58 @@ void serverHandlers() {
 
 
   server.on("/dados", HTTP_GET, [](AsyncWebServerRequest *request) {
-  
-    String dataStored = "D*" + String(temperature) + "*" + String(humidity) + "*" + String(flame) + "*" + String(smoke) + "*" + String(isCoolerOn() ? "1" : "0") + "*" + String(isDoorOpen() ? "1" : "0") + "*" + statusHumidity + "*";
+    /*
+    D -0
+    temp - 1
+    humid -2
+    soil -3
+    flame - 4
+    smoke - 5
+    light - 6
+    pump - 7
+    status - 8
+
+    
+    */
+    String dataStored = "D*" + String(temperature) + "*" + String(humidity) + "*" + String(soil) + "*" + String(flame) + "*" + String(smoke) + "*" + String(isLightsOn() ? "1" : "0") + "*" + String(isPumpOn() ? "1" : "0") + "*" + String(status) + "*";
     Serial.println("--------> Dados:" + dataStored);
     String resp = "{\"status\":\"success\", \"data\":\"" + dataStored + "\"}";
     request->send(200, "application/json", resp);
   });
 
-  server.on("/cooler", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.println("--------> cooler");
-    if (isCoolerOn())
-      turnOffCooler();
-    else
-      turnOnCooler();
+  server.on("/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("--------> mode");
+    status = (status == 'A') ? 'M' : 'A';
     request->send(200, "application/json", "{\"status\":\"success\"}");
   });
 
-  server.on("/door", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/lights", HTTP_GET, [](AsyncWebServerRequest *request) {
     Serial.println("--------> luzes");
-    if (isDoorOpen())
-      turnOffLights();
-    else
-      turnOnLights();
-    request->send(200, "application/json", "{\"status\":\"success\"}");
+    if (status == 'M') {
+      if (isLightsOn())
+        turnOffLights();
+        
+      else
+        turnOnLights();
+      request->send(200, "application/json", "{\"status\":\"success\"}");
+    } else {
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"O Sistema está no modo Automático\"}");
+    }
+  });
+
+  server.on("/pump", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("--------> pump");
+    if (status == 'M') {
+      if (isPumpOn())
+        turnOffPump();
+      else
+        turnOnPump();
+      request->send(200, "application/json", "{\"status\":\"success\"}");
+    } else
+      request->send(200, "application/json", "{\"status\":\"error\", \"message\":\"O Sistema está no modo Automático\"}");
   });
 
 
   server.onNotFound(notFound);
   server.begin();
 }
-*/
