@@ -10,7 +10,8 @@ section{
     align-items: center;
     width: 100%;
     min-height: 100vh;
-    background: url('tel.jpg') no-repeat;
+    /* background-color: #1d1f1a; */
+    background: url('estufa-capa.jpg') no-repeat;
     background-position: center;
     background-size: cover;
 }

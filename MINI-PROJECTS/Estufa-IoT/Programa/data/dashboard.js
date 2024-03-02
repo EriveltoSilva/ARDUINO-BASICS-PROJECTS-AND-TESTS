@@ -54,10 +54,12 @@ function receiveData() {
             if (dados[0] == 'D') {
 
                 temperatureSensor.innerHTML = dados[1] + "*C";
-                if (dados[1] >= 32)
+                if (dados[1] > 32)
                     temperatureLevel.innerHTML = "ALTA";
-                else
+                else if(dados[1] >= 10)
                     temperatureLevel.innerHTML = "NORMAL";
+                else
+                    temperatureLevel.innerHTML = "BAIXA0";
 
                 humiditySensor.innerHTML = dados[2] + "%";
                 if (dados[2] >= 85)
@@ -69,11 +71,11 @@ function receiveData() {
 
                 soilSensor.innerHTML = dados[3] + "%";
                 if (dados[3] >= 85)
-                    soilLevel.innerHTML = "ALTA";
-                else if (dados[3] >= 45)
+                    soilLevel.innerHTML = "HUMIDO";
+                else if (dados[3] > 30)
                     soilLevel.innerHTML = "NORMAL";
                 else
-                    soilLevel.innerHTML = "BAIXA";
+                    soilLevel.innerHTML = "SECO";
 
 
                 flameSensor.innerHTML = dados[4] + "%";
@@ -88,7 +90,7 @@ function receiveData() {
                     document.getElementById('imgFlameSensor').src = "nofire.png";
                 }
 
-                smokeSensor.innerHTML = dados[4] + "%";
+                smokeSensor.innerHTML = dados[5] + "%";
                 if (dados[5] >= 60) {
                     smokeLevel.innerHTML = "FUMO DETECTADO";
                     document.getElementById('imgSmokeLevel').src = "smoke.png";
@@ -102,12 +104,11 @@ function receiveData() {
                 
                 btnLights.innerHTML = (dados[6] == "1") ? "APAGAR" : "ACENDER";
                 document.getElementById('imgLights').src = (dados[6] == "1") ? "lampOn.png" : "lampOff.png";
-
-                btnMode.innerHTML = (dados[7] == "A") ? "AUTOMÁTICO" : "MANUAL";
-                document.getElementById('modeText').innerText = (dados[5] == "1") ? "AUTO" : "MANUAL";
                 
-                btnMode.innerHTML = (dados[8] == "1") ? "DESLIGAR" : "LIGAR";
-                document.getElementById('imgPump').src = (dados[8] == "1") ? "pumpOn.png" : "pumpOff.png";
+                btnPump.innerHTML = (dados[7] == "1") ? "DESLIGAR" : "LIGAR";
+                document.getElementById('imgPump').src = (dados[7] == "1") ? "pumpOn.png" : "pumpOff.png";
+                
+                btnMode.innerHTML = (dados[8] == "A") ? "AUTOMÁTICO" : "MANUAL";
             }
         })
         .catch(error => { console.error("## ERRO PEGANDO OS DADOS:" + error); })

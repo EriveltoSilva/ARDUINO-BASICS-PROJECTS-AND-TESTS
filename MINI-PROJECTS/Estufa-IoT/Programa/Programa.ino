@@ -1,3 +1,4 @@
+
 /**************************************************
     AUTHOR: EriveltoSilva                        **
     FOR:                                         **
@@ -7,7 +8,7 @@
       *** 2-DHT11                                **
       *** 3-Sensor de Chama                      **
       *** 4-Sensor de Fumo (MQ135)               **
-      *** 5-Sensor de Luz                        ** 
+      *** 5-Sensor de Luz                        **
       *** 6-Cooler                               **
 **************************************************/
 
@@ -55,48 +56,49 @@
 #define PASSWORD "123456789"  /////
 ///////////////////////////////////////////////////
 
-////////// VARIABLES USED IN THE PROJECT //////////
+////////// VARIABLES USED IN THE PROJECT /////////////
 char status = 'A';                               /////
 bool buzzerPreviewStatus = false;                /////
 unsigned long int timeDelay = 0;                 /////
 float temperature = 0, humidity = 0;             /////
 int flame = 0, smoke = 0, lights = 0, soil = 0;  /////
 bool flagSmoke = false, flagFlame = false;       /////
-bool flagSoil = false;                           /////
-///////////////////////////////////////////////////
+bool flagSoil = false, flagAlarm=false;          /////
+//////////////////////////////////////////////////////
 
-///////////////  OBJECTS DEFINITIONS  /////////////
-DHT dht(DHTPIN, DHTTYPE);            /////
-AsyncWebServer server(80);           /////
-LiquidCrystal_I2C lcd(0x27, 20, 4);  /////
-///////////////////////////////////////////////////
+///////////////  OBJECTS DEFINITIONS  ////////////////
+DHT dht(DHTPIN, DHTTYPE);                        /////
+AsyncWebServer server(80);                       /////
+LiquidCrystal_I2C lcd(0x27, 20, 4);              /////
+//////////////////////////////////////////////////////
 
-////////////// FUNCTION DEFINITIONS  //////////////
-void wifiConfig();                      /////
-void initConfig();                      /////
-bool initMyFS();                        /////
-bool isUser(String, String);            /////
-void serverHandlers();                  /////
-void saveUserFirebase(String, String);  /////
-bool isPumpOn();                        /////
-bool isBuzzerOn();                      /////
-bool isLightsOn();                      /////
-void readSensors();                     /////
-void turnOnLights();                    /////
-void turnOffLights();                   /////
-void turnOnPump();                      /////
-void turnOffPump();                     /////
-void turnOnBuzzer();                    /////
-void turnOffBuzzer();                   /////
-void buttonsHandler();                  /////
-///////////////////////////////////////////////////
+////////////// FUNCTION DEFINITIONS  /////////////////
+void wifiConfig();                               /////
+void initConfig();                               /////
+bool initMyFS();                                 /////
+bool isUser(String, String);                     /////
+void serverHandlers();                           /////
+void saveUserFirebase(String, String);           /////
+bool isPumpOn();                                 /////
+bool isBuzzerOn();                               /////
+bool isLightsOn();                               /////
+void readSensors();                              /////
+void analyseData();                              /////
+void turnOnLights();                             /////
+void turnOffLights();                            /////
+void turnOnPump();                               /////
+void turnOffPump();                              /////
+void turnOnBuzzer();                             /////
+void turnOffBuzzer();                            /////
+void buttonsHandler();                           /////
+//////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-///////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void setup() {
   initConfig();
   wifiConfig();
@@ -106,12 +108,14 @@ void setup() {
   Serial.println(" ##-------SISTEMA DE DOMÓTICA!--------##");
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 void loop() {
   static byte cont = 0;
   if (millis() - timeDelay > 1000) {
     timeDelay = millis();
     readSensors();
+    analyseData();
+    setAlarm(flagAlarm);
     if (++cont == 2) {
       cont = 0;
       printLCD();
@@ -123,7 +127,7 @@ void loop() {
   delay(20);
 }
 
-/////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 void initConfig() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
@@ -132,10 +136,11 @@ void initConfig() {
   digitalWrite(BUZZER, LOW);
 
   pinMode(PUMP, OUTPUT);
-  digitalWrite(PUMP, LOW);
+  turnOffPump();
 
   pinMode(LIGHTS, OUTPUT);
-  digitalWrite(LIGHTS, LOW);
+  turnOffLights();
+
 
   pinMode(BTN_STATUS, INPUT_PULLUP);
   pinMode(BTN_PUMP, INPUT_PULLUP);
@@ -160,7 +165,7 @@ void initConfig() {
   delay(3000);
 }
 
-/////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
 void wifiConfig() {
   if (WiFi.status() == WL_CONNECTED)
     return;
@@ -203,7 +208,18 @@ void readSensors() {
   temperature = dht.readTemperature();
   // flame       = map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
   flame = 100 - map(analogRead(FLAME_SENSOR), 0, 4095, 0, 100);
-  smoke = 100 - map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
+  //smoke = 100 - map(analogRead(SMOKE_SENSOR), 0, 4095, 0, 100);
+
+  int fumo = analogRead(SMOKE_SENSOR);
+  //Serial.println("----------------------------------------------------------> Fumo:"+String(fumo));
+  smoke = map(fumo, 0, 4095, 0, 100);
+  /*
+   * 1401, 1460
+   * 2500
+   * 4095 --- 100
+   * 2500  -- x
+  */
+
   lights = 100 - map(analogRead(LDR_SENSOR), 0, 4095, 0, 100);
   soil = 100 - map(analogRead(SOIL_SENSOR), 0, 4095, 0, 100);
 
@@ -211,12 +227,14 @@ void readSensors() {
     Serial.println(F("Falha ao Ler os DHT11! Verifique as Conexões!"));
     humidity = temperature = 0;
   }
+}
 
+void analyseData() {
   if (status == 'A') {
     if (soil < 30 && !flagSoil) {
       flagSoil = true;
       turnOnPump();
-    } else if (flagSoil && soil > 90) {
+    } else if (soil > 85 && flagSoil) {
       flagSoil = false;
       turnOffPump();
     }
@@ -225,22 +243,27 @@ void readSensors() {
       turnOnLights();
     else
       turnOffLights();
-  }
 
-  if (flame > LIMIAR_FLAME && !flagFlame) {
-    flagFlame = true;
-    turnOnBuzzer();
-  } else if (flame < LIMIAR_FLAME && flagFlame) {
-    flagFlame = false;
-    turnOffBuzzer();
-  }
+    if (flame >= LIMIAR_FLAME && !flagFlame) {
+      flagFlame = true;
+      flagAlarm=true;
+    } else if (flame < LIMIAR_FLAME && flagFlame) {
+      flagFlame = false;
+      flagAlarm=false;
+    }
 
-  if (smoke > LIMIAR_SMOKE && !flagSmoke) {
-    flagSmoke = true;
-    turnOnBuzzer();
-  } else if (flame < LIMIAR_SMOKE && flagSmoke) {
-    flagSmoke = false;
-    turnOffBuzzer();
+    if (smoke >= LIMIAR_SMOKE && !flagSmoke) {
+      flagSmoke = true;
+      flagAlarm=true;
+    } else if (flame < LIMIAR_SMOKE && flagSmoke) {
+      flagSmoke = false;
+      flagAlarm=false;
+    }
+
+    if (flagFlame && flagSmoke)
+      turnOnPump();
+    else
+      turnOffPump();
   }
 
   Serial.println("TEMP.....:" + String(temperature) + "%");
@@ -271,6 +294,9 @@ void saveUserFirebase(String username, String password) {
 void buttonsHandler() {
   if (!digitalRead(BTN_STATUS)) {
     status = (status == 'A') ? 'M' : 'A';
+    flagAlarm=false;
+    flagSmoke=false;
+    flagFlame=false;
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("####################");
@@ -437,6 +463,31 @@ void printLCD() {
 }
 
 
+///////////////////////////////////////////////
+void setAlarm(bool status) {
+  if (status) 
+  {
+    for (int i = 0; i < 100; i++)
+    {
+      digitalWrite(BUZZER, HIGH);
+      delay(1);
+      digitalWrite(BUZZER, LOW);
+      delay(1);
+    }
+    delay(100);
+
+    for (int i = 0; i < 200; i++) {
+      digitalWrite(BUZZER, HIGH);
+      delay(1);
+      digitalWrite(BUZZER, LOW);
+      delay(2);
+    }
+    delay(900);
+  } else {
+    digitalWrite(BUZZER, LOW);
+    delay(1);
+  }
+}
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -483,6 +534,7 @@ void serverHandlers() {
   server.on("/lampOn.png", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/lampOn.png", "image/jpeg");
   });
+
   server.on("/fire.png", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/fire.png", "image/jpeg");
   });
@@ -490,25 +542,38 @@ void serverHandlers() {
   server.on("/nofire.png", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/nofire.png", "image/jpeg");
   });
+
   server.on("/nosmoke.png", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/nosmoke.png", "image/jpeg");
   });
+
   server.on("/smoke.png", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/smoke.png", "image/jpeg");
   });
+
   server.on("/tel.jpg", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/tel.jpg", "image/jpeg");
   });
+
   server.on("/temperature.jpeg", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/temperature.jpeg", "image/jpeg");
   });
 
-  // server.on("/ventilador.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(SPIFFS, "/ventilador.png", "image/jpeg");
-  // });
-  // server.on("/ventiladorOff.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(SPIFFS, "/ventiladorOff.png", "image/jpeg");
-  // });
+  server.on("/pumpOff.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/pumpOff.png", "image/jpeg");
+  });
+
+  server.on("/pumpOn.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/pumpOn.png", "image/jpeg");
+  });
+
+  server.on("/estufa-capa.jpg", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/estufa-capa.jpg", "image/jpeg");
+  });
+
+  server.on("/soil.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/soil.png", "image/jpeg");
+  });
 
 
 
@@ -593,17 +658,15 @@ void serverHandlers() {
 
   server.on("/dados", HTTP_GET, [](AsyncWebServerRequest *request) {
     /*
-    D -0
-    temp - 1
-    humid -2
-    soil -3
-    flame - 4
-    smoke - 5
-    light - 6
-    pump - 7
-    status - 8
-
-    
+      D ------- 0
+      temp ---- 1
+      humid --- 2
+      soil ---- 3
+      flame --- 4
+      smoke --- 5
+      light --- 6
+      pump ---- 7
+      status -- 8
     */
     String dataStored = "D*" + String(temperature) + "*" + String(humidity) + "*" + String(soil) + "*" + String(flame) + "*" + String(smoke) + "*" + String(isLightsOn() ? "1" : "0") + "*" + String(isPumpOn() ? "1" : "0") + "*" + String(status) + "*";
     Serial.println("--------> Dados:" + dataStored);
@@ -614,6 +677,9 @@ void serverHandlers() {
   server.on("/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
     Serial.println("--------> mode");
     status = (status == 'A') ? 'M' : 'A';
+    flagAlarm=false;
+    flagSmoke=false;
+    flagFlame=false;
     request->send(200, "application/json", "{\"status\":\"success\"}");
   });
 
@@ -622,7 +688,7 @@ void serverHandlers() {
     if (status == 'M') {
       if (isLightsOn())
         turnOffLights();
-        
+
       else
         turnOnLights();
       request->send(200, "application/json", "{\"status\":\"success\"}");
