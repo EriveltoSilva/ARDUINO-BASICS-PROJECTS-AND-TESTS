@@ -403,42 +403,42 @@ void printLCD() {
  
   switch (flag) {
     case 0:
-      lcd.print("TEMP.....:");
+      lcd.print("TEMPERTURA:");
       lcd.print(temperature);
       lcd.print("*C");
 
       lcd.setCursor(0, 1);
-      lcd.print("HUM. AR..:");
+      lcd.print("HUM. AR...:");
       lcd.print(humidity);
       lcd.print("%");
           
       lcd.setCursor(0, 2);
-      lcd.print("CHAMAS...:");
+      lcd.print("CHAMAS....:");
       lcd.print(flame);
       lcd.print("%");
 
       lcd.setCursor(0, 3);
-      lcd.print("FUMO.....:");
+      lcd.print("FUMO......:");
       lcd.print(smoke);
       lcd.print("%");
       break;
 
     case 1:
-      lcd.print("HUM. SOLO:");
+      lcd.print("HUM.  SOLO:");
       lcd.print(soil);
       lcd.print("%");
 
       lcd.setCursor(0, 1);
-      lcd.print("CLAREZA..:");
+      lcd.print("CLAREZA...:");
       lcd.print(lights);
       lcd.print("%");
           
       lcd.setCursor(0, 2);
-      lcd.print("LUZES....:");
+      lcd.print("LUZES.....:");
       lcd.print(isLightsOn() ? "ON" : "OFF");
 
       lcd.setCursor(0, 3);
-      lcd.print("BOMBA....:");
+      lcd.print("BOMBA.....:");
       lcd.print(isPumpOn() ? "ON" : "OFF");
       break;
   }

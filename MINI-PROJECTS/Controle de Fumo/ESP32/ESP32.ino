@@ -4,6 +4,7 @@
 
 //////////////////////////////// DEFINITIONS ////////////////////////////
 #define LED 2
+#define BUZZER 4
 #define DHTPIN 15
 #define RXD2 16  
 #define TXD2 17 
@@ -11,13 +12,13 @@
 #define CHAMA 35
 
 
-#define DHTTYPE DHT22   //Ou poderia ser o DHT11 
+#define DHTTYPE DHT11   //Ou poderia ser o DHT22
 #define TEMPO_CHAMADA 15000
 #define TEMPO_ATE_CHAMADA 10000
 #define SERIAL_BAUD_RATE 9600
 
 #define LIMIAR_TEMPERATURA 35 // Valor para começar deteção(em graus Celcius)
-#define LIMIAR_FUMO 350       // Valor para começa a detectar (indo de 0 a 1023)
+#define LIMIAR_FUMO 60       // Valor para começa a detectar (indo de 0 a 1023)
 #define LIMIAR_CHAMA 55       // Valor para começar deteção(em percentagem)
 
 ////////////////////////////// GLOBAL VARIEBLES ////////////////////////
@@ -37,12 +38,14 @@ DHT dht(DHTPIN, DHTTYPE);
 void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
   Serial.begin(SERIAL_BAUD_RATE);
   delay(1000);
   gsm.begin(SERIAL_BAUD_RATE, SERIAL_8N1, RXD2, TXD2);
   delay(1000);
   dht.begin();
-  fazerChamada(NUMERO_TELEFONE, TEMPO_CHAMADA);
+  //fazerChamada(NUMERO_TELEFONE, TEMPO_CHAMADA);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -79,21 +82,45 @@ void lerSensores()
 {
   humidade = dht.readHumidity();
   temperatura = dht.readTemperature();
-  valorFumo = analogRead(MQ135);
-  valorChama = 100-map(analogRead(CHAMA), 0, 1023, 0,100 );
+  
+  valorFumo = 100 - map(analogRead(MQ135), 0, 4095, 0, 100);
+  valorChama = map(analogRead(CHAMA), 0, 4095, 0, 100);
   if (isnan(humidade) || isnan(temperatura))
   {
     temperatura = humidade = 0;
     Serial.println(F("Falha ao Detectar o Sensor DHT! Verifique as ligações"));
   }
+
+  if (valorChama > LIMIAR_CHAMA && !flagChama) {
+    flagChama = true;
+    ativarAlarme();
+  } else if (valorChama < LIMIAR_CHAMA && flagChama) {
+    flagChama = false;
+    desativarAlarme();
+  }
+
+  if (valorFumo > LIMIAR_FUMO && !flagFumo) {
+    flagFumo = true;
+    ativarAlarme();
+  } else if (valorFumo < LIMIAR_FUMO && flagFumo) {
+    flagFumo = false;
+    desativarAlarme();
+  }
   
   flagTemperatura = (temperatura>LIMIAR_TEMPERATURA);
-  flagFumo = (valorFumo >LIMIAR_FUMO);
-  flagChama = (valorChama >LIMIAR_CHAMA);
 
   estadoTemperatura = (flagTemperatura)? "ALTA TEMPERATURA DETECTADA!": "TEMPERATURA NORMAL";
   estadoFumo = (flagFumo)? "POSSIVEL INCÊNCIO DETECTADO": "NORMAL, SEM FUMO";
   estadoChama = (flagChama)? "FOGO DETECTADO!": "NORMAL, SEM FOGO!";
+}
+
+/////////////////////////////////////////////////////////////////////////
+void ativarAlarme() {
+  digitalWrite(BUZZER, HIGH);
+}
+
+void desativarAlarme() {
+  digitalWrite(BUZZER, LOW);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -122,6 +149,9 @@ void analise()
       fazerChamada(NUMERO_TELEFONE,TEMPO_CHAMADA);
     }
   }
+  else{
+    flagEnvio=false;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -140,6 +170,7 @@ String getMensagem()
 ////////////////////////////////////////////////////////////////////////
 void enviarSMS(const String number, String sms)
 {
+  Serial.println("\n################ SENDING SMS ! #################");
   Serial.print("SMS: "); Serial.println(sms);
   gsm.println("AT+CMGF=1");
   delay(1000);  comunication();
@@ -156,11 +187,14 @@ void enviarSMS(const String number, String sms)
 ////////////////////////////////////////////////////////////////////////
 void fazerChamada(const String number, unsigned long time) 
 {
+  Serial.println("###################### FAZENDO CHAMADA ##################################");
   gsm.println("ATD +" + String(number) +";");
   delay(100);
   gsm.println();
   delay(time);// chama durante time milli segundos
   gsm.println("ATH"); // hang up
+  Serial.println("###################### TERMINANDO CHAMADA ##################################");
+
 }
 
 void configGSM()
