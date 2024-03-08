@@ -1,6 +1,20 @@
-////////////////////////////// LIBRARIES ////////////////////////////////
-#include "DHT.h"
-#include <String.h>
+/**
+ * Componente                        ESP32          
+ * DHT11 --------------------------> 15
+ * BUZZER-------------------------->  4
+ * MQ135 --------------------------> 34
+ * CHAMAS -------------------------> 35
+ * GSM(TX, RX) --------------------> RX2(16), TX2(17)
+ * LCD com I2C(SCL, SDA) ----------> SCL(22), SDA(21)  
+ * BOTÃO DE PRESSÃO  --------------> 5
+ * 
+*/
+
+
+#define BLYNK_TEMPLATE_ID           "TMPL2zm081CXh"
+#define BLYNK_TEMPLATE_NAME         "Quickstart Template"
+#define BLYNK_AUTH_TOKEN            "DXEkUH3iqFmJsVuaKH3mSkLFKby8NYmF"
+#define BLYNK_PRINT Serial
 
 //////////////////////////////// DEFINITIONS ////////////////////////////
 #define LED 2
@@ -11,15 +25,26 @@
 #define MQ135 34
 #define CHAMA 35
 
-
 #define DHTTYPE DHT11   //Ou poderia ser o DHT22
 #define TEMPO_CHAMADA 15000
 #define TEMPO_ATE_CHAMADA 10000
-#define SERIAL_BAUD_RATE 9600
+#define SERIAL_BAUD_RATE 115200
 
 #define LIMIAR_TEMPERATURA 35 // Valor para começar deteção(em graus Celcius)
 #define LIMIAR_FUMO 60       // Valor para começa a detectar (indo de 0 a 1023)
 #define LIMIAR_CHAMA 55       // Valor para começar deteção(em percentagem)
+
+////////////////////////////// LIBRARIES ////////////////////////////////
+#include "DHT.h"
+#include <WiFi.h>
+#include <String.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+
+// Your WiFi credentials.
+char ssid[] = "AFONSO";
+char pass[] = "123456789";
 
 ////////////////////////////// GLOBAL VARIEBLES ////////////////////////
 int valorFumo=0, valorChama=0;
@@ -31,51 +56,63 @@ unsigned long int tempoDelay = 0, temporizador=0;
 const String NUMERO_TELEFONE = "+244940811141";
 
 ////////////////////////////// OBEJECTS ////////////////////////////////
+BlynkTimer timer;
 HardwareSerial gsm(2);
 DHT dht(DHTPIN, DHTTYPE);
 
-////////////////////////////////////////////////////////////////////////
-void setup() {
+
+// This function sends Arduino's uptime every second to Virtual Pin 2.
+void sendDadaToBlynk()
+{
+  lerSensores();
+  // mostrarDados();
+  analise();
+  digitalWrite(LED, !digitalRead(LED));
+
+  Blynk.virtualWrite(V0, temperatura);
+  Blynk.virtualWrite(V1, humidade);
+  Blynk.virtualWrite(V2, valorChama);
+  Blynk.virtualWrite(V3, valorFumo);
+}
+
+void setup()
+{
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
   Serial.begin(SERIAL_BAUD_RATE);
   delay(1000);
-  gsm.begin(SERIAL_BAUD_RATE, SERIAL_8N1, RXD2, TXD2);
+  gsm.begin(9600, SERIAL_8N1, RXD2, TXD2);
   delay(1000);
   dht.begin();
-  //fazerChamada(NUMERO_TELEFONE, TEMPO_CHAMADA);
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  timer.setInterval(1000L, sendDadaToBlynk);
 }
 
-////////////////////////////////////////////////////////////////////////
-void loop() {
-  String response = receberSMS();
-  if (response.indexOf("+CMT:") > 0)
-  {
-    if (response.indexOf("DESLIGAR") > 0)
-    {
-      flagAlarme=false;
-      Serial.println("ALARME DESLIGADO");
-    }
-    else if (response.indexOf("LIGAR") > 0)
-    {
-      flagAlarme=true;
-      Serial.println("ALARME LIGADO");
-    }
-  }
-
-  if(millis()-tempoDelay>1000){
-    tempoDelay = millis();
-    lerSensores();
-    mostrarDados();
-    analise();
-
-    digitalWrite(LED, !digitalRead(LED));
-  }
+void loop()
+{
+  Blynk.run();
+  timer.run();
   
-  delay(10);
+
+  String response = receberSMS();
+  // if (response.indexOf("+CMT:") > 0)
+  // {
+  //   if (response.indexOf("DESLIGAR") > 0)
+  //   {
+  //     flagAlarme=false;
+  //     Serial.println("ALARME DESLIGADO");
+  //   }
+  //   else if (response.indexOf("LIGAR") > 0)
+  //   {
+  //     flagAlarme=true;
+  //     Serial.println("ALARME LIGADO");
+  //   }
+  // }
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 void lerSensores()
@@ -123,6 +160,7 @@ void desativarAlarme() {
   digitalWrite(BUZZER, LOW);
 }
 
+
 ////////////////////////////////////////////////////////////////////////
 void mostrarDados()
 {
@@ -131,8 +169,9 @@ void mostrarDados()
   Serial.println("Humidade:"+String(humidade)+"%");
   Serial.println("MQ135:"+String(valorFumo)+", "+estadoFumo);
   Serial.println("Chama:"+String(valorChama)+"%, "+estadoChama);
-
 }
+
+
 
 void analise()
 {
@@ -167,20 +206,22 @@ String getMensagem()
   return texto;
 }
 
+
+
 ////////////////////////////////////////////////////////////////////////
 void enviarSMS(const String number, String sms)
 {
   Serial.println("\n################ SENDING SMS ! #################");
-  Serial.print("SMS: "); Serial.println(sms);
-  gsm.println("AT+CMGF=1");
-  delay(1000);  comunication();
-  gsm.println("AT+CMGS=\"" + number + "\"\r");
-  delay(1000);  comunication();
-  gsm.println(sms);
-  delay(100);
-  gsm.println((char)26);
-  delay(1000);  comunication();
-  delay(4000);
+  // Serial.print("SMS: "); Serial.println(sms);
+  // gsm.println("AT+CMGF=1");
+  // delay(1000);  comunication();
+  // gsm.println("AT+CMGS=\"" + number + "\"\r");
+  // delay(1000);  comunication();
+  // gsm.println(sms);
+  // delay(100);
+  // gsm.println((char)26);
+  // delay(1000);  comunication();
+  // delay(4000);
   Serial.println("\n################ SMS SENT! #################");
 }
 
@@ -188,46 +229,46 @@ void enviarSMS(const String number, String sms)
 void fazerChamada(const String number, unsigned long time) 
 {
   Serial.println("###################### FAZENDO CHAMADA ##################################");
-  gsm.println("ATD +" + String(number) +";");
-  delay(100);
-  gsm.println();
-  delay(time);// chama durante time milli segundos
-  gsm.println("ATH"); // hang up
+  // gsm.println("ATD +" + String(number) +";");
+  // delay(100);
+  // gsm.println();
+  // delay(time);
+  // gsm.println("ATH");
   Serial.println("###################### TERMINANDO CHAMADA ##################################");
 
 }
 
 void configGSM()
 {
-  gsm.print("AT+CMGF=1\r");                         //Set gsm in text mode
-  delay(1000);                                      //Wait 1 second
-  gsm.print("AT+CNMI=2,2,0,0,0\r");                 //Put gsm waiting for a new message get received
-  delay(1000);                                      //Wait 1 second
+  // gsm.print("AT+CMGF=1\r");           
+  // delay(1000);                     
+  // gsm.print("AT+CNMI=2,2,0,0,0\r");          
+  // delay(1000);               
 }
 
 ///////////////////////////////////////
 String receberSMS()
 {
   String answer = "";
-  if (gsm.available() > 0)
-  {
-    while (gsm.available() > 0) {
-      delay(5);
-      char sms = gsm.read();
-      answer += sms;
-    }
-    Serial.print(answer);
-  }
+  // if (gsm.available() > 0)
+  // {
+  //   while (gsm.available() > 0) {
+  //     delay(5);
+  //     char sms = gsm.read();
+  //     answer += sms;
+  //   }
+  //   Serial.print(answer);
+  // }
   return answer;
 }
 ////////////////////////////////////////////////////////////////////////
 void comunication()
 {
-  if (Serial.available())
-    while (Serial.available())
-      gsm.write(Serial.read());
+  // if (Serial.available())
+  //   while (Serial.available())
+  //     gsm.write(Serial.read());
 
-  if (gsm.available())
-    while (gsm.available())
-      Serial.write(gsm.read());
+  // if (gsm.available())
+  //   while (gsm.available())
+  //     Serial.write(gsm.read());
 }
