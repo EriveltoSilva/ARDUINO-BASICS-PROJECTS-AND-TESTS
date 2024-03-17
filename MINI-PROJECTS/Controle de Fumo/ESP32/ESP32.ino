@@ -11,28 +11,27 @@
 */
 
 
-#define BLYNK_TEMPLATE_ID           "TMPL2zm081CXh"
-#define BLYNK_TEMPLATE_NAME         "Quickstart Template"
-#define BLYNK_AUTH_TOKEN            "DXEkUH3iqFmJsVuaKH3mSkLFKby8NYmF"
+#define BLYNK_TEMPLATE_ID "TMPL2zm081CXh"
+#define BLYNK_TEMPLATE_NAME "Quickstart Template"
+#define BLYNK_AUTH_TOKEN "DXEkUH3iqFmJsVuaKH3mSkLFKby8NYmF"
 #define BLYNK_PRINT Serial
 
 //////////////////////////////// DEFINITIONS ////////////////////////////
 #define LED 2
 #define BUZZER 4
 #define DHTPIN 15
-#define RXD2 16  
-#define TXD2 17 
+#define RXD2 16
+#define TXD2 17
 #define MQ135 34
 #define CHAMA 35
 
-#define DHTTYPE DHT11   //Ou poderia ser o DHT22
+#define DHTTYPE DHT11  //Ou poderia ser o DHT22
 #define TEMPO_CHAMADA 15000
 #define TEMPO_ATE_CHAMADA 10000
-#define SERIAL_BAUD_RATE 115200
 
-#define LIMIAR_TEMPERATURA 35 // Valor para começar deteção(em graus Celcius)
-#define LIMIAR_FUMO 60       // Valor para começa a detectar (indo de 0 a 1023)
-#define LIMIAR_CHAMA 55       // Valor para começar deteção(em percentagem)
+#define LIMIAR_TEMPERATURA 35  // Valor para começar deteção(em graus Celcius)
+#define LIMIAR_FUMO 60         // Valor para começa a detectar (indo de 0 a 1023)
+#define LIMIAR_CHAMA 55        // Valor para começar deteção(em percentagem)
 
 ////////////////////////////// LIBRARIES ////////////////////////////////
 #include "DHT.h"
@@ -47,13 +46,15 @@ char ssid[] = "AFONSO";
 char pass[] = "123456789";
 
 ////////////////////////////// GLOBAL VARIEBLES ////////////////////////
-int valorFumo=0, valorChama=0;
-float temperatura=0, humidade=0;
-bool flagAlarme=true, flagEnvio=false;
-bool flagFumo=false, flagChama=false, flagTemperatura=false;
-String estadoFumo="", estadoChama="", estadoTemperatura="";
-unsigned long int tempoDelay = 0, temporizador=0;
-const String NUMERO_TELEFONE = "+244940811141";
+int valorFumo = 0, valorChama = 0;
+float temperatura = 0, humidade = 0;
+const String NUMERO_AUTORIDADE = "+244955749112";
+const String NUMERO_PROPRIETARIO = "+244940811141";
+unsigned long int tempoDelay = 0, temporizador = 0;
+bool flagSMSAutoridade = false, flagChamadaAutoridade = false;
+bool flagSMSProprietario = false, flagChamadaProprietario = false;
+bool flagFumo = false, flagChama = false, flagTemperatura = false;
+String estadoFumo = "", estadoChama = "", estadoTemperatura = "";
 
 ////////////////////////////// OBEJECTS ////////////////////////////////
 BlynkTimer timer;
@@ -62,26 +63,19 @@ DHT dht(DHTPIN, DHTTYPE);
 
 
 // This function sends Arduino's uptime every second to Virtual Pin 2.
-void sendDadaToBlynk()
-{
-  lerSensores();
-  // mostrarDados();
-  analise();
-  digitalWrite(LED, !digitalRead(LED));
-
+void sendDadaToBlynk() {
   Blynk.virtualWrite(V0, temperatura);
   Blynk.virtualWrite(V1, humidade);
   Blynk.virtualWrite(V2, valorChama);
   Blynk.virtualWrite(V3, valorFumo);
 }
 
-void setup()
-{
+void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin(115200);
   delay(1000);
   gsm.begin(9600, SERIAL_8N1, RXD2, TXD2);
   delay(1000);
@@ -91,39 +85,41 @@ void setup()
   timer.setInterval(1000L, sendDadaToBlynk);
 }
 
-void loop()
-{
-  Blynk.run();
-  timer.run();
-  
+void loop() {
+  comunication();
+  if (millis() - tempoDelay > 1500) {
+    tempoDelay = millis();
+    lerSensores();
+    // mostrarDados();
+    analise();
+    digitalWrite(LED, !digitalRead(LED));
+  }
 
   String response = receberSMS();
-  // if (response.indexOf("+CMT:") > 0)
-  // {
-  //   if (response.indexOf("DESLIGAR") > 0)
-  //   {
-  //     flagAlarme=false;
-  //     Serial.println("ALARME DESLIGADO");
-  //   }
-  //   else if (response.indexOf("LIGAR") > 0)
-  //   {
-  //     flagAlarme=true;
-  //     Serial.println("ALARME LIGADO");
-  //   }
-  // }
+  if (response.indexOf("+CMT:") > 0) {
+    if (response.indexOf("DESLIGAR") > 0) {
+      // flagChamada = false;
+      Serial.println("ALARME DESLIGADO");
+    } else if (response.indexOf("LIGAR") > 0) {
+      // flagAlarmeEnvio = true;
+      Serial.println("ALARME LIGADO");
+    }
+  }
+
+  Serial.println("Hello");
+  Blynk.run();
+  timer.run();
 }
 
 
 ////////////////////////////////////////////////////////////////////////
-void lerSensores()
-{
+void lerSensores() {
   humidade = dht.readHumidity();
   temperatura = dht.readTemperature();
-  
+
   valorFumo = 100 - map(analogRead(MQ135), 0, 4095, 0, 100);
   valorChama = map(analogRead(CHAMA), 0, 4095, 0, 100);
-  if (isnan(humidade) || isnan(temperatura))
-  {
+  if (isnan(humidade) || isnan(temperatura)) {
     temperatura = humidade = 0;
     Serial.println(F("Falha ao Detectar o Sensor DHT! Verifique as ligações"));
   }
@@ -143,12 +139,12 @@ void lerSensores()
     flagFumo = false;
     desativarAlarme();
   }
-  
-  flagTemperatura = (temperatura>LIMIAR_TEMPERATURA);
 
-  estadoTemperatura = (flagTemperatura)? "ALTA TEMPERATURA DETECTADA!": "TEMPERATURA NORMAL";
-  estadoFumo = (flagFumo)? "POSSIVEL INCÊNCIO DETECTADO": "NORMAL, SEM FUMO";
-  estadoChama = (flagChama)? "FOGO DETECTADO!": "NORMAL, SEM FOGO!";
+  flagTemperatura = (temperatura > LIMIAR_TEMPERATURA);
+
+  estadoTemperatura = (flagTemperatura) ? "ALTA TEMPERATURA DETECTADA!" : "TEMPERATURA NORMAL";
+  estadoFumo = (flagFumo) ? "POSSIVEL INCÊNCIO DETECTADO" : "NORMAL, SEM FUMO";
+  estadoChama = (flagChama) ? "FOGO DETECTADO!" : "NORMAL, SEM FOGO!";
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -162,113 +158,128 @@ void desativarAlarme() {
 
 
 ////////////////////////////////////////////////////////////////////////
-void mostrarDados()
-{
+void mostrarDados() {
   Serial.println("--------------------------DADOS----------------------------");
-  Serial.println("Temperatura:"+String(temperatura)+"*C, "+estadoTemperatura);
-  Serial.println("Humidade:"+String(humidade)+"%");
-  Serial.println("MQ135:"+String(valorFumo)+", "+estadoFumo);
-  Serial.println("Chama:"+String(valorChama)+"%, "+estadoChama);
+  Serial.println("Temperatura:" + String(temperatura) + "*C, " + estadoTemperatura);
+  Serial.println("Humidade:" + String(humidade) + "%");
+  Serial.println("MQ135:" + String(valorFumo) + ", " + estadoFumo);
+  Serial.println("Chama:" + String(valorChama) + "%, " + estadoChama);
 }
 
 
 
-void analise()
-{
-  if(flagTemperatura || flagFumo || flagChama)
-  {
-    if(flagEnvio==false && flagAlarme==true)
+void analise() {
+  if (flagTemperatura || flagFumo || flagChama) {
+    if (!flagSMSProprietario && !flagChamadaProprietario) 
     {
+      flagSMSProprietario = true;
+      String mensagem = getMensagem();
+      enviarSMS(NUMERO_PROPRIETARIO, mensagem);
       temporizador = millis();
-      flagEnvio=true;
-      enviarSMS(NUMERO_TELEFONE,getMensagem());
-    }
-    else if(flagEnvio==true && flagAlarme && (millis()-temporizador)>TEMPO_ATE_CHAMADA)
+    } else if (flagSMSProprietario && !flagChamadaProprietario && (millis() - temporizador) > TEMPO_ATE_CHAMADA) 
     {
-      fazerChamada(NUMERO_TELEFONE,TEMPO_CHAMADA);
+      flagChamadaProprietario = true;
+      fazerChamada(NUMERO_PROPRIETARIO, TEMPO_CHAMADA);
+      temporizador = millis();
+    } else {
+      Serial.println("Usuario já contactado");
+
+      if (!flagSMSAutoridade && !flagChamadaAutoridade && (millis() - temporizador) > 20000) {
+        flagSMSAutoridade = true;
+        String mensagem = getMensagem();
+        enviarSMS(NUMERO_AUTORIDADE, mensagem);
+        temporizador = millis();
+      } 
+      else if (flagSMSAutoridade && !flagChamadaAutoridade && (millis() - temporizador) > TEMPO_ATE_CHAMADA) 
+      {
+        fazerChamada(NUMERO_AUTORIDADE, TEMPO_CHAMADA);
+        flagChamadaAutoridade = true;
+        temporizador = millis();
+      } else {
+        Serial.println("Autoridade já contactada");
+      }
     }
-  }
-  else{
-    flagEnvio=false;
+
+  } else {
+    flagSMSProprietario = false;
+    flagChamadaProprietario = false;
+    flagSMSAutoridade = false;
+    flagChamadaAutoridade = false;
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
-String getMensagem()
-{
+String getMensagem() {
   String texto = "";
-  if(flagTemperatura || flagFumo || flagChama) 
+  if (flagTemperatura || flagFumo || flagChama)
     texto += "==================== ALERTA ====================\n";
-  texto += "Temperatura:"+String(temperatura)+"*C, "+estadoTemperatura+"\n";
-  texto += "Humidade:"+String(humidade)+"%\n";
-  texto += "MQ135:"+String(valorFumo)+", "+estadoFumo+"\n";
-  texto += "Chama:"+String(valorChama)+"%, "+estadoChama+"\n";
+  texto += "Temperatura:" + String(temperatura) + "*C, " + estadoTemperatura + "\n";
+  texto += "Humidade:" + String(humidade) + "%\n";
+  texto += "MQ135:" + String(valorFumo) + ", " + estadoFumo + "\n";
+  texto += "Chama:" + String(valorChama) + "%, " + estadoChama + "\n";
   return texto;
 }
 
 
 
 ////////////////////////////////////////////////////////////////////////
-void enviarSMS(const String number, String sms)
-{
-  Serial.println("\n################ SENDING SMS ! #################");
-  // Serial.print("SMS: "); Serial.println(sms);
-  // gsm.println("AT+CMGF=1");
-  // delay(1000);  comunication();
-  // gsm.println("AT+CMGS=\"" + number + "\"\r");
-  // delay(1000);  comunication();
-  // gsm.println(sms);
-  // delay(100);
-  // gsm.println((char)26);
-  // delay(1000);  comunication();
-  // delay(4000);
-  Serial.println("\n################ SMS SENT! #################");
+void enviarSMS(const String number, String sms) {
+  Serial.println("\n################ ENVIANDO MENSAGENS ! #################");
+  gsm.println("AT+CMGF=1");
+  delay(1000);
+  comunication();
+  gsm.println("AT+CMGS=\"" + number + "\"\r");
+  delay(1000);
+  comunication();
+  gsm.println(sms);
+  delay(100);
+  gsm.println((char)26);
+  delay(1000);
+  comunication();
+  delay(4000);
+  Serial.println(sms);
+  Serial.println("\n################ MENSAGEM ENVIADA! #################");
+  configGSM();
 }
 
 ////////////////////////////////////////////////////////////////////////
-void fazerChamada(const String number, unsigned long time) 
-{
+void fazerChamada(const String number, unsigned long time) {
   Serial.println("###################### FAZENDO CHAMADA ##################################");
-  // gsm.println("ATD +" + String(number) +";");
-  // delay(100);
-  // gsm.println();
-  // delay(time);
-  // gsm.println("ATH");
+  gsm.println("ATD +" + String(number) + ";");
+  delay(100);
+  gsm.println();
+  delay(time);
+  gsm.println("ATH");
   Serial.println("###################### TERMINANDO CHAMADA ##################################");
-
 }
 
-void configGSM()
-{
-  // gsm.print("AT+CMGF=1\r");           
-  // delay(1000);                     
-  // gsm.print("AT+CNMI=2,2,0,0,0\r");          
-  // delay(1000);               
+void configGSM() {
+  gsm.print("AT+CMGF=1\r");
+  delay(1000);
+  gsm.print("AT+CNMI=2,2,0,0,0\r");
+  delay(1000);
 }
 
 ///////////////////////////////////////
-String receberSMS()
-{
+String receberSMS() {
   String answer = "";
-  // if (gsm.available() > 0)
-  // {
-  //   while (gsm.available() > 0) {
-  //     delay(5);
-  //     char sms = gsm.read();
-  //     answer += sms;
-  //   }
-  //   Serial.print(answer);
-  // }
+  if (gsm.available() > 0) {
+    while (gsm.available() > 0) {
+      delay(5);
+      char sms = gsm.read();
+      answer += sms;
+    }
+    Serial.print(answer);
+  }
   return answer;
 }
 ////////////////////////////////////////////////////////////////////////
-void comunication()
-{
-  // if (Serial.available())
-  //   while (Serial.available())
-  //     gsm.write(Serial.read());
+void comunication() {
+  if (Serial.available())
+    while (Serial.available())
+      gsm.write(Serial.read());
 
-  // if (gsm.available())
-  //   while (gsm.available())
-  //     Serial.write(gsm.read());
+  if (gsm.available())
+    while (gsm.available())
+      Serial.write(gsm.read());
 }
