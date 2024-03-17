@@ -25,13 +25,17 @@
 #define MQ135 34
 #define CHAMA 35
 
+
 #define DHTTYPE DHT11  //Ou poderia ser o DHT22
 #define TEMPO_CHAMADA 15000
 #define TEMPO_ATE_CHAMADA 10000
+#define NUMERO_CHAMADAS 3
 
 #define LIMIAR_TEMPERATURA 35  // Valor para começar deteção(em graus Celcius)
 #define LIMIAR_FUMO 60         // Valor para começa a detectar (indo de 0 a 1023)
 #define LIMIAR_CHAMA 55        // Valor para começar deteção(em percentagem)
+
+#define ENDERECO_RESIDENCIA "Angola, Luanda, Rangel, Rua Rubra, Casa nº 32"
 
 ////////////////////////////// LIBRARIES ////////////////////////////////
 #include "DHT.h"
@@ -169,6 +173,9 @@ void mostrarDados() {
 
 
 void analise() {
+  static byte cont1 =0;
+  static byte cont2 =0;
+
   if (flagTemperatura || flagFumo || flagChama) {
     if (!flagSMSProprietario && !flagChamadaProprietario) 
     {
@@ -178,7 +185,8 @@ void analise() {
       temporizador = millis();
     } else if (flagSMSProprietario && !flagChamadaProprietario && (millis() - temporizador) > TEMPO_ATE_CHAMADA) 
     {
-      flagChamadaProprietario = true;
+      if (++cont1==NUMERO_CHAMADAS)
+        flagChamadaProprietario = true;
       fazerChamada(NUMERO_PROPRIETARIO, TEMPO_CHAMADA);
       temporizador = millis();
     } else {
@@ -186,14 +194,15 @@ void analise() {
 
       if (!flagSMSAutoridade && !flagChamadaAutoridade && (millis() - temporizador) > 20000) {
         flagSMSAutoridade = true;
-        String mensagem = getMensagem();
+        String mensagem = getMensagemAutoridade();
         enviarSMS(NUMERO_AUTORIDADE, mensagem);
         temporizador = millis();
       } 
       else if (flagSMSAutoridade && !flagChamadaAutoridade && (millis() - temporizador) > TEMPO_ATE_CHAMADA) 
       {
+        if (++cont2==NUMERO_CHAMADAS)
+          flagChamadaAutoridade = true;
         fazerChamada(NUMERO_AUTORIDADE, TEMPO_CHAMADA);
-        flagChamadaAutoridade = true;
         temporizador = millis();
       } else {
         Serial.println("Autoridade já contactada");
@@ -205,6 +214,8 @@ void analise() {
     flagChamadaProprietario = false;
     flagSMSAutoridade = false;
     flagChamadaAutoridade = false;
+    cont1=0;
+    cont2=0;
   }
 }
 
@@ -212,11 +223,27 @@ void analise() {
 String getMensagem() {
   String texto = "";
   if (flagTemperatura || flagFumo || flagChama)
-    texto += "==================== ALERTA ====================\n";
+    texto += "==== ALERTA DE INCENDIO ====\n";
+  texto += "Local......:Minha Residencia\n";
+  texto += "SMS Para...:Proprietario da Residencia\n";
   texto += "Temperatura:" + String(temperatura) + "*C, " + estadoTemperatura + "\n";
-  texto += "Humidade:" + String(humidade) + "%\n";
-  texto += "MQ135:" + String(valorFumo) + ", " + estadoFumo + "\n";
-  texto += "Chama:" + String(valorChama) + "%, " + estadoChama + "\n";
+  texto += "Humidade...:" + String(humidade) + "%\n";
+  texto += "MQ135......:" + String(valorFumo) + ", " + estadoFumo + "\n";
+  texto += "Chama......:" + String(valorChama) + "%, " + estadoChama + "\n";
+  return texto;
+}
+
+String getMensagemAutoridade() {
+  String texto = "";
+  if (flagTemperatura || flagFumo || flagChama)
+    texto += "===== ALERTA DE INCENDIO =====\n";
+  texto += "Local......:" + String(ENDERECO_RESIDENCIA)+"\n";
+  texto += "SMS Para...: Centro de Combate ao Incendio\n";
+  texto += "Temperatura:" + String(temperatura) + "*C, " + estadoTemperatura + "\n";
+  texto += "Humidade...:" + String(humidade) + "%\n";
+  texto += "MQ135......:" + String(valorFumo) + ", " + estadoFumo + "\n";
+  texto += "Chama......:" + String(valorChama) + "%, " + estadoChama + "\n";
+  texto += "Pede-se a accao imediata do \"Centro de Combate a Incendio\"\n";
   return texto;
 }
 
