@@ -1,4 +1,3 @@
-
 /**************************************************
     AUTHOR: EriveltoSilva                        **
     FOR:                                         **
@@ -13,92 +12,91 @@
 **************************************************/
 
 ////////////////// Libraries Used  ////////////////
-#include <WiFi.h>                  /////
-#include "DHT.h"                   /////
-#include <Wire.h>                  /////
-#include "SPIFFS.h"                /////
-#include <AsyncTCP.h>              /////
-#include <ArduinoJson.h>           /////
-#include <ESPAsyncWebServer.h>     /////
-#include <LiquidCrystal_I2C.h>     /////
-#include <IOXhop_FirebaseESP32.h>  /////
+#include <WiFi.h>                             /////
+#include "DHT.h"                              /////
+#include <Wire.h>                             /////
+#include "SPIFFS.h"                           /////
+#include <AsyncTCP.h>                         /////
+#include <ArduinoJson.h>                      /////
+#include <ESPAsyncWebServer.h>                /////
+#include <LiquidCrystal_I2C.h>                /////
+#include <IOXhop_FirebaseESP32.h>             /////
 ///////////////////////////////////////////////////
 
 ////////////////  PIN CONFIGURATIONS ///////////////
-#define LED 2            /////
-#define LIGHTS 4         /////
-#define BUZZER 5         /////
-#define DHTPIN 15        /////
-#define BTN_PUMP 18      /////
-#define BTN_STATUS 19    /////
-#define BTN_LIGHTS 12    /////
-#define PUMP 23          /////
-#define FLAME_SENSOR 34  /////
-#define SMOKE_SENSOR 35  /////
-#define LDR_SENSOR 39    /////
-#define SOIL_SENSOR 36   /////
+#define LED 2                                  /////
+#define LIGHTS 4                               /////
+#define BUZZER 5                               /////
+#define DHTPIN 15                              /////
+#define BTN_PUMP 18                            /////
+#define BTN_LIGHTS 12                          /////
+#define BTN_STATUS 19                          /////
+#define PUMP 23                                /////
+#define FLAME_SENSOR 34                        /////
+#define SMOKE_SENSOR 35                        /////
+#define LDR_SENSOR 39                          /////
+#define SOIL_SENSOR 36                         /////
 ////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////
 #define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"
 #define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"
-/////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 ///////////// OTHER CONSTANTS DEFINITIONS /////////
-#define DHTTYPE DHT11    /////
-#define LIMIAR_FLAME 65  /////
-#define LIMIAR_SMOKE 60  /////
+#define DHTTYPE DHT11                         /////
+#define LIMIAR_FLAME 65                       /////
+#define LIMIAR_SMOKE 60                       /////
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "ESTUFA"         /////
-#define PASSWORD "123456789"  /////
+#define SSID "ESTUFA"                         /////
+#define PASSWORD "123456789"                  /////
 ///////////////////////////////////////////////////
 
-////////// VARIABLES USED IN THE PROJECT /////////////
-char status = 'A';                               /////
-bool buzzerPreviewStatus = false;                /////
-unsigned long int timeDelay = 0;                 /////
-float temperature = 0, humidity = 0;             /////
-int flame = 0, smoke = 0, lights = 0, soil = 0;  /////
-bool flagSmoke = false, flagFlame = false;       /////
-bool flagSoil = false, flagAlarm=false;          /////
-//////////////////////////////////////////////////////
+///////// VARIABLES USED IN THE PROJECT ///////////
+char status = 'A';                            /////
+unsigned long int timeDelay = 0;              /////
+bool buzzerPreviewStatus = false;             /////
+float temperature = 0, humidity = 0;          /////
+bool flagSoil = false, flagAlarm=false;       /////
+bool flagSmoke = false, flagFlame = false;    /////
+int flame = 0, smoke = 0, lights = 0, soil = 0;////
+///////////////////////////////////////////////////
 
-///////////////  OBJECTS DEFINITIONS  ////////////////
-DHT dht(DHTPIN, DHTTYPE);                        /////
-AsyncWebServer server(80);                       /////
-LiquidCrystal_I2C lcd(0x27, 20, 4);              /////
-//////////////////////////////////////////////////////
+///////////////  OBJECTS DEFINITIONS  /////////////
+DHT dht(DHTPIN, DHTTYPE);                     /////
+AsyncWebServer server(80);                    /////
+LiquidCrystal_I2C lcd(0x27, 20, 4);           /////
+///////////////////////////////////////////////////
 
-////////////// FUNCTION DEFINITIONS  /////////////////
-void wifiConfig();                               /////
-void initConfig();                               /////
-bool initMyFS();                                 /////
-bool isUser(String, String);                     /////
-void serverHandlers();                           /////
-void saveUserFirebase(String, String);           /////
-bool isPumpOn();                                 /////
-bool isBuzzerOn();                               /////
-bool isLightsOn();                               /////
-void readSensors();                              /////
-void analyseData();                              /////
-void turnOnLights();                             /////
-void turnOffLights();                            /////
-void turnOnPump();                               /////
-void turnOffPump();                              /////
-void turnOnBuzzer();                             /////
-void turnOffBuzzer();                            /////
-void buttonsHandler();                           /////
-//////////////////////////////////////////////////////
+////////////// FUNCTION DEFINITIONS////////////////
+void wifiConfig();                            /////
+void initConfig();                            /////
+bool initMyFS();                              /////
+bool isUser(String, String);                  /////
+void serverHandlers();                        /////
+void saveUserFirebase(String, String);        /////
+bool isPumpOn();                              /////
+bool isBuzzerOn();                            /////
+bool isLightsOn();                            /////
+void readSensors();                           /////
+void analyseData();                           /////
+void turnOnLights();                          /////
+void turnOffLights();                         /////
+void turnOnPump();                            /////
+void turnOffPump();                           /////
+void turnOnBuzzer();                          /////
+void turnOffBuzzer();                         /////
+void buttonsHandler();                        /////
+///////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////
+///////////////////////////////////////////////////
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-///////////////////////////////////////////////////////
+///////////////////////////////////////////////////
 void setup() {
   initConfig();
   wifiConfig();
@@ -108,7 +106,7 @@ void setup() {
   Serial.println(" ##-------SISTEMA DE DOMÓTICA!--------##");
 }
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 void loop() {
   static byte cont = 0;
   if (millis() - timeDelay > 1000) {
@@ -127,7 +125,7 @@ void loop() {
   delay(20);
 }
 
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 void initConfig() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
@@ -165,7 +163,7 @@ void initConfig() {
   delay(3000);
 }
 
-///////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 void wifiConfig() {
   if (WiFi.status() == WL_CONNECTED)
     return;
@@ -202,7 +200,7 @@ void wifiConfig() {
   delay(5000);
 }
 
-//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 void readSensors() {
   humidity = dht.readHumidity();
   temperature = dht.readTemperature();
@@ -213,6 +211,7 @@ void readSensors() {
   int fumo = analogRead(SMOKE_SENSOR);
   //Serial.println("----------------------------------------------------------> Fumo:"+String(fumo));
   smoke = map(fumo, 0, 4095, 0, 100);
+  smoke = (smoke<55)? 0 : smoke;
   /*
    * 1401, 1460
    * 2500
@@ -231,10 +230,10 @@ void readSensors() {
 
 void analyseData() {
   if (status == 'A') {
-    if (soil < 30 && !flagSoil) {
+    if (soil < 10 && !flagSoil) {
       flagSoil = true;
       turnOnPump();
-    } else if (soil > 85 && flagSoil) {
+    } else if (soil > 50 && flagSoil) {
       flagSoil = false;
       turnOffPump();
     }
@@ -246,23 +245,23 @@ void analyseData() {
 
     if (flame >= LIMIAR_FLAME && !flagFlame) {
       flagFlame = true;
-      flagAlarm=true;
+      flagAlarm = true;
     } else if (flame < LIMIAR_FLAME && flagFlame) {
       flagFlame = false;
-      flagAlarm=false;
+      flagAlarm = false;
     }
 
     if (smoke >= LIMIAR_SMOKE && !flagSmoke) {
       flagSmoke = true;
-      flagAlarm=true;
+      flagAlarm = true;
     } else if (flame < LIMIAR_SMOKE && flagSmoke) {
       flagSmoke = false;
-      flagAlarm=false;
+      flagAlarm = false;
     }
 
     if (flagFlame && flagSmoke)
       turnOnPump();
-    else
+    else if(!flagSoil)
       turnOffPump();
   }
 
@@ -297,6 +296,7 @@ void buttonsHandler() {
     flagAlarm=false;
     flagSmoke=false;
     flagFlame=false;
+    flagSoil =false;
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("####################");
