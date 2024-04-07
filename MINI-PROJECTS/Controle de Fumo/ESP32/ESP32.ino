@@ -1,12 +1,12 @@
 /**
  * Componente                        ESP32          
  * DHT11 --------------------------> 15
- * BUZZER-------------------------->  4
+ * BUZZER--------------------------> 04
  * MQ135 --------------------------> 34
  * CHAMAS -------------------------> 35
  * GSM(TX, RX) --------------------> RX2(16), TX2(17)
  * LCD com I2C(SCL, SDA) ----------> SCL(22), SDA(21)  
- * BOTÃO DE PRESSÃO  --------------> 5
+ * BOTÃO DE PRESSÃO  --------------> 05
  * 
 */
 
@@ -48,12 +48,12 @@
 // Your WiFi credentials.
 char ssid[] = "AFONSO";
 char pass[] = "123456789";
+const String NUMERO_AUTORIDADE = "+244943169235";
+const String NUMERO_PROPRIETARIO = "+244940811141";
 
 ////////////////////////////// GLOBAL VARIEBLES ////////////////////////
 int valorFumo = 0, valorChama = 0;
 float temperatura = 0, humidade = 0;
-const String NUMERO_AUTORIDADE = "+244955749112";
-const String NUMERO_PROPRIETARIO = "+244940811141";
 unsigned long int tempoDelay = 0, temporizador = 0;
 bool flagSMSAutoridade = false, flagChamadaAutoridade = false;
 bool flagSMSProprietario = false, flagChamadaProprietario = false;
@@ -94,8 +94,8 @@ void loop() {
   if (millis() - tempoDelay > 1500) {
     tempoDelay = millis();
     lerSensores();
-    // mostrarDados();
     analise();
+    // mostrarDados();
     digitalWrite(LED, !digitalRead(LED));
   }
 
@@ -110,6 +110,8 @@ void loop() {
     }
   }
 
+  /* codigo do botão aqui*/
+
   Serial.println("Hello");
   Blynk.run();
   timer.run();
@@ -123,32 +125,13 @@ void lerSensores() {
 
   valorFumo = 100 - map(analogRead(MQ135), 0, 4095, 0, 100);
   valorChama = map(analogRead(CHAMA), 0, 4095, 0, 100);
+  
   if (isnan(humidade) || isnan(temperatura)) {
     temperatura = humidade = 0;
     Serial.println(F("Falha ao Detectar o Sensor DHT! Verifique as ligações"));
   }
 
-  if (valorChama > LIMIAR_CHAMA && !flagChama) {
-    flagChama = true;
-    ativarAlarme();
-  } else if (valorChama < LIMIAR_CHAMA && flagChama) {
-    flagChama = false;
-    desativarAlarme();
-  }
-
-  if (valorFumo > LIMIAR_FUMO && !flagFumo) {
-    flagFumo = true;
-    ativarAlarme();
-  } else if (valorFumo < LIMIAR_FUMO && flagFumo) {
-    flagFumo = false;
-    desativarAlarme();
-  }
-
-  flagTemperatura = (temperatura > LIMIAR_TEMPERATURA);
-
-  estadoTemperatura = (flagTemperatura) ? "ALTA TEMPERATURA DETECTADA!" : "TEMPERATURA NORMAL";
-  estadoFumo = (flagFumo) ? "POSSIVEL INCÊNCIO DETECTADO" : "NORMAL, SEM FUMO";
-  estadoChama = (flagChama) ? "FOGO DETECTADO!" : "NORMAL, SEM FOGO!";
+  
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -175,6 +158,30 @@ void mostrarDados() {
 void analise() {
   static byte cont1 =0;
   static byte cont2 =0;
+
+  if (valorChama > LIMIAR_CHAMA && !flagChama) {
+    flagChama = true;
+    ativarAlarme();
+  } else if (valorChama < LIMIAR_CHAMA && flagChama) {
+    flagChama = false;
+    desativarAlarme();
+  }
+
+  if (valorFumo > LIMIAR_FUMO && !flagFumo) {
+    flagFumo = true;
+    ativarAlarme();
+  } else if (valorFumo < LIMIAR_FUMO && flagFumo) {
+    flagFumo = false;
+    desativarAlarme();
+  }
+
+  flagTemperatura = (temperatura > LIMIAR_TEMPERATURA);
+
+
+  estadoTemperatura = (flagTemperatura) ? "ALTA TEMPERATURA DETECTADA!" : "TEMPERATURA NORMAL";
+  estadoFumo = (flagFumo) ? "POSSIVEL INCÊNCIO DETECTADO" : "NORMAL, SEM FUMO";
+  estadoChama = (flagChama) ? "FOGO DETECTADO!" : "NORMAL, SEM FOGO!";
+
 
   if (flagTemperatura || flagFumo || flagChama) {
     if (!flagSMSProprietario && !flagChamadaProprietario) 
