@@ -2,6 +2,7 @@
     AUTHOR: EriveltoSilva                        **
     FOR:                                         **
     CREATED AT:25-02-2024                        **
+    UPDATED AT:26-05-2024                        **
     Principais Componentes usados:               **
       *** 1-ESP32 (1)                            **
       *** 2-DHT11                                **
@@ -30,7 +31,8 @@
 #define DHTPIN 15                              /////
 #define BTN_PUMP 18                            /////
 #define BTN_LIGHTS 12                          /////
-#define FUN 13                          /////
+#define FAN 13                                 /////
+#define HEATER 14                              /////
 #define BTN_STATUS 19                          /////
 #define PUMP 23                                /////
 #define FLAME_SENSOR 34                        /////
@@ -39,10 +41,10 @@
 #define SOIL_SENSOR 36                         /////
 ////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////
-#define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"
-#define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"
-////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+#define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/"    //////
+#define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"                //////
+/////////////////////////////////////////////////////////////////////////////////////
 
 ///////////// OTHER CONSTANTS DEFINITIONS /////////
 #define DHTTYPE DHT11                         /////
@@ -131,8 +133,11 @@ void initConfig() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
 
-  pinMode(FUN, OUTPUT);
-  digitalWrite(FUN, LOW);
+  pinMode(FAN, OUTPUT);
+  digitalWrite(FAN, LOW);
+  
+  pinMode(HEATER, OUTPUT);
+  digitalWrite(HEATER, LOW);
   
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
@@ -230,10 +235,24 @@ void readSensors() {
     Serial.println(F("Falha ao Ler os DHT11! Verifique as Conexões!"));
     humidity = temperature = 0;
   }
+    
 }
 
 void analyseData() {
   if (status == 'A') {
+
+
+    if(temperature>=25)
+      turnOnFan();
+    else if(temperature >= 20)
+    { 
+      turnOffFan();
+      turnOffHeater();
+    } 
+    else
+      turnOnHeater();
+
+
     if (soil < 10 && !flagSoil) {
       flagSoil = true;
       turnOnPump();
@@ -362,6 +381,22 @@ void buttonsHandler() {
 
 bool isLightsOn() {
   return (digitalRead(LIGHTS));
+}
+
+void turnOnFan() {
+  digitalWrite(FAN, HIGH);
+}
+
+void turnOffFan() {
+  digitalWrite(FAN, LOW);
+}
+
+void turnOnHeater() {
+  digitalWrite(HEATER, HIGH);
+}
+
+void turnOffHeater() {
+  digitalWrite(HEATER, LOW);
 }
 
 void turnOnLights() {
