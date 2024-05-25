@@ -30,6 +30,7 @@
 #define DHTPIN 15                              /////
 #define BTN_PUMP 18                            /////
 #define BTN_LIGHTS 12                          /////
+#define FUN 13                          /////
 #define BTN_STATUS 19                          /////
 #define PUMP 23                                /////
 #define FLAME_SENSOR 34                        /////
@@ -130,6 +131,9 @@ void initConfig() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
 
+  pinMode(FUN, OUTPUT);
+  digitalWrite(FUN, LOW);
+  
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
 
