@@ -1,61 +1,61 @@
 /**************************************************
-    AUTHOR: Otlevire
-    FOR: RUI e Colega
-    Universidade Metodista
-    CREATED AT: 10-09-2023.
+    AUTHOR: Otlevire.
+    FOR: ------------
+    Universidade ISPB.
+    CREATED AT: 26-05-2024.
 
     Principais Componentes usados:
       *** 1-ESP32 (1)
 *************************************************/
 
 ////////////////// Labraries Used  ////////////////
-#include <WiFi.h>                 /////
-#include "SPIFFS.h"               /////
-#include <AsyncTCP.h>             /////
-#include <ArduinoJson.h>          /////
-#include <ESPAsyncWebServer.h>    /////
-#include <IOXhop_FirebaseESP32.h> //importa biblioteca para esp32 se comunicar com firebase
+#include <WiFi.h>                             /////
+#include "SPIFFS.h"                           /////
+#include <AsyncTCP.h>                         /////
+#include <ArduinoJson.h>                      /////
+#include <ESPAsyncWebServer.h>                /////
+#include <IOXhop_FirebaseESP32.h>             /////importa biblioteca para esp32 se comunicar com firebase
 ///////////////////////////////////////////////////
 
 ////////////////  PIN CONFIGURATIONS //////////////
-#define LED 2                                                               /////
-#define RXD2 16                                                             // RX da serial do ESP32      /////
-#define TXD2 17                                                             // TX da serial do ESP32      /////
+#define LED 2                                 /////
+#define RXD2 16                               /////                                                           // RX da serial do ESP32      /////
+#define TXD2 17                               /////                                                           // TX da serial do ESP32      /////
 #define FIREBASE_HOST "https://parque-control-default-rtdb.firebaseio.com/" // substitua "Link_do_seu_banco_de_dados" pelo link do seu banco de dados
 #define FIREBASE_AUTH "AIzaSyDljBC-KlS1MTJTXcNzbxsK-ROP30dnqsU"             // substitua "Senha_do_seu_banco_de_dados" pela senha do seu banco de dados
-#define TIME_RESERVATION 120000
+#define TIME_RESERVATION 120000               /////
 ///////////////////////////////////////////////////
 
 /////////////  NETWORK CONFIGURATIONS /////////////
-#define SSID "PARK"          /////
-#define PASSWORD "123456789" /////
+#define SSID "PARK"                           /////
+#define PASSWORD "123456789"                  /////
 ///////////////////////////////////////////////////
 
 ////////// VARIABLES USED IN THE PROJECT //////////
-bool flagAgend1 = false;                  /////
-bool flagAgend2 = false;                  /////
-String dataStored = "D*0*0*0*0*0*0*0*0*"; /////
-String userReservation1 = "";             /////
-String userReservation2 = "";             /////
-unsigned long int timerReservation1 = 0;  /////
-unsigned long int timerReservation2 = 0;  /////
-unsigned long int timeDelay = 0;          /////
+bool flagAgend1 = false;                      /////
+bool flagAgend2 = false;                      /////
+String dataStored = "D*0*0*0*0*0*0*0*0*";     /////
+String userReservation1 = "";                 /////
+String userReservation2 = "";                 /////
+unsigned long int timerReservation1 = 0;      /////
+unsigned long int timerReservation2 = 0;      /////
+unsigned long int timeDelay = 0;              /////
 ///////////////////////////////////////////////////
 
 ///////////////  OBJECTS DEFINITIONS  /////////////
-AsyncWebServer server(80); /////
-HardwareSerial arduino(2); /////
+AsyncWebServer server(80);                    /////
+HardwareSerial arduino(2);                    /////
 ///////////////////////////////////////////////////
 
 ////////////// FUNCTION DEFINITIONS  //////////////
-void wifiConfig();                          /////
-void initConfig();                          /////
-bool initMyFS();                            /////
-bool isUser(String email, String password); /////
-void serverHandlers();                      /////
+void wifiConfig();                            /////
+void initConfig();                            /////
+bool initMyFS();                              /////
+bool isUser(String email, String password);   /////
+void serverHandlers();                        /////
 void saveUserFirebase(String email, String password);
 ///////////////////////////////////////////////////
-
+  
 ////////////////////////////////////////////////////
 void notFound(AsyncWebServerRequest *request)
 {

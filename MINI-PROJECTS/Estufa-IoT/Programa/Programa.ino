@@ -59,6 +59,7 @@
 
 ///////// VARIABLES USED IN THE PROJECT ///////////
 char status = 'A';                            /////
+String statusTemperature="";
 unsigned long int timeDelay = 0;              /////
 bool buzzerPreviewStatus = false;             /////
 float temperature = 0, humidity = 0;          /////
@@ -243,14 +244,21 @@ void analyseData() {
 
 
     if(temperature>=25)
+    {
       turnOnFan();
+      statusTemperature = "ALTA";
+    }
     else if(temperature >= 20)
     { 
       turnOffFan();
       turnOffHeater();
+      statusTemperature = "NORMAL";
     } 
     else
+    {
       turnOnHeater();
+      statusTemperature = "BAIXA";
+    }
 
 
     if (soil < 10 && !flagSoil) {
@@ -456,9 +464,11 @@ void printLCD() {
 
   switch (flag) {
     case 0:
-      lcd.print("TEMPERTURA:");
+      lcd.print("TEMP:");
       lcd.print(temperature);
       lcd.print("*C");
+      lcd.setCursor(15, 0);
+      lcd.print(statusTemperature);
 
       lcd.setCursor(0, 1);
       lcd.print("HUM. AR...:");
