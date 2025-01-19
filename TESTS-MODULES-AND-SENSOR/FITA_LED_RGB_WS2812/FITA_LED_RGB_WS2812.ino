@@ -1,4 +1,4 @@
-#include <FastLED.h>
+#include <FastLED.h> // Library FastLED by Daniel Garcia
 
 // For led chips like WS2812, which have a data line, ground, and power, you just
 // need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
